@@ -1,0 +1,22 @@
+0xbf
+0xde
+0xfd
+0xff
+
+Processing -U lfuse:r:-:h
+Reading lfuse memory ...
+Writing 1 byte to output file <stdout>
+
+Processing -U hfuse:r:-:h
+Reading hfuse memory ...
+Writing 1 byte to output file <stdout>
+
+Processing -U efuse:r:-:h
+Reading efuse memory ...
+Writing 1 byte to output file <stdout>
+
+Processing -U lock:r:-:h
+Reading lock memory ...
+Writing 1 byte to output file <stdout>
+
+Avrdude done.  Thank you.

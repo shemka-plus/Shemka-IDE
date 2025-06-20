@@ -1,0 +1,14 @@
+{
+    "theme": "dark",
+    "color_theme": "blue",
+    "recent_files": [
+        "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.cpp",
+        "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.c",
+        "C:/Stas/shemka-plus/shemka+IDE/build/sketch.c",
+        "C:/Stas/shemka-plus/v0.3/ide.py",
+        "C:/Stas/shemka-plus/v0.2/ide02.py"
+    ],
+    "com_port": "COM6",
+    "baudrate": "9600",
+    "mcu": "ATmega328P"
+}
