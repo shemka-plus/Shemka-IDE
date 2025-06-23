@@ -23,7 +23,8 @@ class AVRCompiler:
             # Создание файла .cpp (для Arduino API)
             src_file = output_dir / "sketch.cpp"
             with open(src_file, "w", encoding="utf-8") as f:
-                f.write('#include <Arduino.h>\n\n')
+                if '#include <Arduino.h>' not in source_code:
+                    f.write('#include <Arduino.h>\n\n')
                 f.write(source_code)
 
             # Проверка важных компонентов
