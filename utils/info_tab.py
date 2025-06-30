@@ -54,6 +54,7 @@ class InfoTab(ctk.CTkFrame):
         ctk.CTkLabel(link_frame, text="Ссылки:", font=("", 14, "bold")).pack(anchor="w", padx=5)
 
         self.add_link(link_frame, "🌐 GitFlic", "https://gitflic.ru/company/shemka-plus")
+        self.add_link(link_frame, "🌐 GitHub", "https://github.com/shemka-plus/Shemka-IDE")
         self.add_link(link_frame, "📘 Документация", "https://b24-bcp47f.bitrix24site.ru/")
         self.add_link(link_frame, "✉️ Поддержка", "mailto:support@shemka.com")
 

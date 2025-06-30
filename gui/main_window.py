@@ -18,7 +18,7 @@ class MainWindow(ctk.CTk):
         self.config = ConfigManager()
         self.tools_root = tools_root  # ✅ Новый аргумент
 
-        icon_path = Path(__file__).parent.parent / "data" / "logo.ico"
+        icon_path = Path(__file__).parent.parent / "data" / "Schemka-ico.ico"
         if icon_path.exists():
             self.iconbitmap(default=str(icon_path))
 

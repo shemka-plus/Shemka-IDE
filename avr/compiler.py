@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 import os
+import re
 
 class AVRCompiler:
     def __init__(self, avr_tools, tools_root=None):
@@ -20,14 +21,12 @@ class AVRCompiler:
             output_dir = Path(output_dir).resolve()
             output_dir.mkdir(exist_ok=True, parents=True)
 
-            # Создание файла .cpp (для Arduino API)
             src_file = output_dir / "sketch.cpp"
             with open(src_file, "w", encoding="utf-8") as f:
                 if '#include <Arduino.h>' not in source_code:
                     f.write('#include <Arduino.h>\n\n')
                 f.write(source_code)
 
-            # Проверка важных компонентов
             specs_file = self.device_specs / f"specs-{mcu}"
             if not specs_file.exists():
                 raise FileNotFoundError(f"Файл спецификаций не найден: {specs_file}")
@@ -41,7 +40,6 @@ class AVRCompiler:
             elf_path = output_dir / "sketch.elf"
             hex_path = output_dir / "sketch.hex"
 
-            # Команда компиляции
             cmd_compile = [
                 str(self.avr_tools['gcc']),
                 "-Wall", "-Os",
@@ -55,7 +53,6 @@ class AVRCompiler:
                 str(src_file)
             ]
 
-            # Подготовка окружения
             env = os.environ.copy()
             env["PATH"] = os.pathsep.join([
                 str(self.bin_dir),
@@ -69,11 +66,11 @@ class AVRCompiler:
 
             if result.returncode != 0:
                 msg = f"Ошибка компиляции:\n{result.stderr}"
+                parsed_errors = self._parse_errors(result.stderr)
                 if callback:
-                    callback(False, msg)
-                return False, msg
+                    callback(False, msg, parsed_errors)
+                return False, msg, parsed_errors
 
-            # Преобразование ELF → HEX
             cmd_objcopy = [
                 str(self.avr_tools['objcopy']),
                 "-O", "ihex",
@@ -87,15 +84,20 @@ class AVRCompiler:
             if result.returncode != 0:
                 msg = f"Ошибка при objcopy:\n{result.stderr}"
                 if callback:
-                    callback(False, msg)
-                return False, msg
+                    callback(False, msg, [])
+                return False, msg, []
 
             if callback:
-                callback(True, "Компиляция завершена успешно")
-            return True, "Компиляция завершена успешно"
+                callback(True, "Компиляция завершена успешно", [])
+            return True, "Компиляция завершена успешно", []
 
         except Exception as e:
             msg = f"Исключение: {e}"
             if callback:
-                callback(False, msg)
-            return False, msg
+                callback(False, msg, [])
+            return False, msg, []
+
+    def _parse_errors(self, stderr):
+        pattern = re.compile(r"(.+?):(\\d+):(\\d+): error: (.+)")
+        matches = pattern.findall(stderr)
+        return [(fname, int(line), int(col), msg.strip()) for fname, line, col, msg in matches]
