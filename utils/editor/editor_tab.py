@@ -11,6 +11,7 @@ from utils.editor.linenumbers import LineNumbers
 from utils.editor.highlighting.registry import get_rules_for_extension
 from gui.config_manager import ConfigManager
 from utils.editor.syntax_editor import SyntaxText
+import tkinter as tk
 
 class EditorTab(ctk.CTkFrame):
     def __init__(self, parent, avr_tools=None, boards=None, config=None, tools_root=None):

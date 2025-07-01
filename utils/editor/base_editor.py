@@ -1,37 +1,33 @@
-from tkinter import scrolledtext
-from .context_menu import bind_context_menu
+import tkinter as tk
 
-class SyntaxText(scrolledtext.ScrolledText):
-    def __init__(self, master, **kwargs):
-        kwargs.setdefault("undo", True)
-        super().__init__(master, **kwargs)
-        self._setup_context_menu()
-        self._bind_shortcuts()
-
+class BaseEditor(tk.Text):
     def _setup_context_menu(self):
-        bind_context_menu(self, {
-            "Копировать": lambda: self.event_generate("<<Copy>>"),
-            "Вставить": lambda: self.event_generate("<<Paste>>"),
-            "Вырезать": lambda: self.event_generate("<<Cut>>"),
-            "Удалить выделенное": lambda: self.delete("sel.first", "sel.last"),
-            "---": None,
-            "Отменить": lambda: self.event_generate("<<Undo>>"),
-            "Повторить": lambda: self.event_generate("<<Redo>>"),
-            "---": None,
-            "Выделить всё": lambda: self.event_generate("<<SelectAll>>"),
-        })
+        self.menu = tk.Menu(self, tearoff=0)
+        self.menu.add_command(label="Копировать", command=lambda: self.event_generate("<<Copy>>"))
+        self.menu.add_command(label="Вставить", command=lambda: self.event_generate("<<Paste>>"))
+        self.menu.add_command(label="Вырезать", command=lambda: self.event_generate("<<Cut>>"))
+        self.menu.add_separator()
+        self.menu.add_command(label="Отменить", command=lambda: self.event_generate("<<Undo>>"))
+        self.menu.add_command(label="Повторить", command=lambda: self.event_generate("<<Redo>>"))
+        self.menu.add_separator()
+        self.menu.add_command(label="Выделить всё", command=lambda: self.event_generate("<<SelectAll>>"))
+
+        self.bind("<Button-3>", self._show_context_menu)
+
+    def _show_context_menu(self, event):
+        try:
+            self.menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.menu.grab_release()
 
     def _bind_shortcuts(self):
-        # Основные привязки для английской раскладки
         self.bind("<Control-c>", lambda e: self.event_generate("<<Copy>>"))
         self.bind("<Control-v>", lambda e: self.event_generate("<<Paste>>"))
         self.bind("<Control-x>", lambda e: self.event_generate("<<Cut>>"))
         self.bind("<Control-a>", lambda e: self.event_generate("<<SelectAll>>"))
         self.bind("<Control-z>", lambda e: self.event_generate("<<Undo>>"))
         self.bind("<Control-y>", lambda e: self.event_generate("<<Redo>>"))
-        
-        # Универсальные привязки по кодам клавиш (работают в любой раскладке)
-        self.bind("<Control-Key>", self._handle_shortcuts_by_keycode)
+        self.bind("<Key>", self._handle_shortcuts_by_keycode)
 
     def _handle_shortcuts_by_keycode(self, event):
         # Коды клавиш для русской раскладки (QWERTY)

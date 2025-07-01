@@ -1,5 +1,3 @@
-# utils/editor/highlighter_core.py
-
 import re
 from pathlib import Path
 from utils.editor.highlighting.registry import get_rules_for_extension
@@ -39,13 +37,12 @@ def highlight_syntax(widget):
 
     try:
         rules, styles = get_rules_for_extension(ext)
-        print(f"[DEBUG] Найдено {len(rules)} правил, {len(styles)} стилей")
-    except Exception as e:
-        from utils.editor.highlighting.arduino_rules import rules, styles
-        print("[DEBUG] fallback-правила:", e)
+    except:
+        from utils.editor.highlighting.arduino_rules import rules, get_styles
+        styles = get_styles()
 
     for tag, color in styles.items():
-        print(f"[DEBUG] tag_config: {tag} → {color}")
+        #print(f"[DEBUG] tag_config: {tag} → {color}")
         widget.tag_config(tag, foreground=color)
 
     for tag in set(t for _, t in rules):
@@ -55,7 +52,8 @@ def highlight_syntax(widget):
         for match in re.finditer(pattern, text, re.MULTILINE | re.DOTALL):
             start = f"1.0+{match.start()}c"
             end = f"1.0+{match.end()}c"
-            print(f"[DEBUG] match: {match.group()} → tag: {tag} at {start}-{end}")
+            #print(f"[DEBUG] match: {match.group()} → tag: {tag} at {start}-{end}")
             widget.tag_add(tag, start, end)
 
     widget.edit_modified(False)
+

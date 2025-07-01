@@ -1,5 +1,7 @@
-from .arduino_rules import rules as arduino_rules, styles as arduino_styles
+#from .arduino_rules import rules as arduino_rules, styles as arduino_styles
 from .python_rules import rules as python_rules, styles as python_styles
+from .arduino_rules import rules as arduino_rules, get_styles as arduino_styles
+
 
 EXTENSION_RULES = {
     "ino": (arduino_rules, arduino_styles),

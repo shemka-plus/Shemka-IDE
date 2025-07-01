@@ -15,7 +15,14 @@ class InfoTab(ctk.CTkFrame):
 
         self.about_path = self.data_dir / "about.txt"
         self.instructions_path = self.data_dir / "instructions.txt"
-        self.logo_path = self.data_dir / "logo.png"
+        #self.logo_path = self.data_dir / "logo.png"
+        from customtkinter import get_appearance_mode
+
+        print(get_appearance_mode())
+        theme = get_appearance_mode()
+        filename = "logo.png" if theme == "Light" else "logo_w.png"
+        self.logo_path = self.data_dir / filename
+
 
         self.setup_ui()
         self.show_about()
