@@ -1,53 +1,61 @@
+# utils/editor/highlighter_core.py
+
 import re
+from pathlib import Path
 from utils.editor.highlighting.registry import get_rules_for_extension
 
-def setup_syntax_tags(self):
-    # Очистка предыдущих тегов (если нужно)
-    self.editor.tag_delete(*self.editor.tag_names())
+def get_file_extension(widget):
+    if hasattr(widget, "current_file") and widget.current_file:
+        return Path(widget.current_file).suffix.lower()
+    return ".ino"  # значение по умолчанию
 
-    # Получаем стиль подсветки по расширению
-    ext = self._get_current_extension()
-    _, styles = get_rules_for_extension(ext)
+def setup_syntax_tags(widget):
+    ext = get_file_extension(widget)
+    try:
+        rules, styles = get_rules_for_extension(ext)
+    except:
+        from utils.editor.highlighting.arduino_rules import rules, styles
 
-    # Применяем цвета тегов
+    widget.tag_delete(*widget.tag_names())
+
     for tag, color in styles.items():
-        self.editor.tag_config(tag, foreground=color)
+        widget.tag_config(tag, foreground=color)
 
-    # Общий стиль фона и курсора
-    self.editor.configure(bg="#2b2b2b", fg="#d4d4d4", insertbackground="white", selectbackground="#264F78")
-    self.console.configure(bg="#000000", fg="#d4d4d4", insertbackground="white", selectbackground="#264F78")
-
-def schedule_syntax_highlight(self, event=None):
-    current_text = self.editor.get("1.0", "end-1c")
-    if current_text == self._last_highlighted_text:
+def schedule_syntax_highlight(widget, event=None):
+    current_text = widget.get("1.0", "end-1c")
+    if hasattr(widget, "_last_highlighted_text") and current_text == widget._last_highlighted_text:
         return
 
-    if self._highlight_job:
-        self.after_cancel(self._highlight_job)
-    self._highlight_job = self.after_idle(self.highlight_syntax)
+    if hasattr(widget, "_highlight_job") and widget._highlight_job:
+        widget.after_cancel(widget._highlight_job)
+    widget._highlight_job = widget.after_idle(lambda: highlight_syntax(widget))
 
-def highlight_syntax(self):
-    current_text = self.editor.get("1.0", "end-1c")
-    if current_text == self._last_highlighted_text:
-        return
+def highlight_syntax(widget):
+    text = widget.get("1.0", "end-1c")
+    print(f"[DEBUG] highlight_syntax(): {len(text)} символов")
 
-    self._last_highlighted_text = current_text
-    ext = self._get_current_extension()
+    ext = get_file_extension(widget)
+    print(f"[DEBUG] Расширение файла: {ext}")
 
-    rules, _ = get_rules_for_extension(ext)
+    try:
+        rules, styles = get_rules_for_extension(ext)
+        print(f"[DEBUG] Найдено {len(rules)} правил, {len(styles)} стилей")
+    except Exception as e:
+        from utils.editor.highlighting.arduino_rules import rules, styles
+        print("[DEBUG] fallback-правила:", e)
+
+    for tag, color in styles.items():
+        print(f"[DEBUG] tag_config: {tag} → {color}")
+        widget.tag_config(tag, foreground=color)
 
     for tag in set(t for _, t in rules):
-        self.editor.tag_remove(tag, "1.0", "end")
+        widget.tag_remove(tag, "1.0", "end")
 
     for pattern, tag in rules:
-        for match in re.finditer(pattern, current_text, re.MULTILINE | re.DOTALL):
+        for match in re.finditer(pattern, text, re.MULTILINE | re.DOTALL):
             start = f"1.0+{match.start()}c"
             end = f"1.0+{match.end()}c"
-            self.editor.tag_add(tag, start, end)
+            print(f"[DEBUG] match: {match.group()} → tag: {tag} at {start}-{end}")
+            widget.tag_add(tag, start, end)
 
-    self.editor.edit_modified(False)
-
-def _get_current_extension(self):
-    if hasattr(self, "current_file") and self.current_file:
-        return self.current_file.lower().split(".")[-1]
-    return "cpp"  # По умолчанию Arduino/C++
+    widget.edit_modified(False)

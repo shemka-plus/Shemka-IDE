@@ -1,18 +1,20 @@
 {
     "theme": "dark",
-    "color_theme": "green",
+    "color_theme": "blue",
     "recent_files": [
-        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/sketch.cpp",
-        "C:/Stas/shemka-plus/v0.3/ide.py",
+        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/Ghost.ino",
+        "C:/Stas/shemka-plus/v0.6/ide-065.py",
+        "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.c",
         "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.cpp",
+        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/sketch.cpp",
+        "C:/Stas/shemka-plus/collector/collector4.py",
+        "C:/Stas/shemka-plus/v0.3/ide.py",
         "C:/Stas/shemka-plus/v0.2/ide02.py",
         "C:/Stas/shemka-plus/shemka+IDE/build/sketch.c",
-        "C:/Stas/shemka-plus/collector/collector4.py",
-        "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.c",
-        "C:/Stas/shemka-plus/collector/collector3.py",
-        "C:/Stas/shemka-plus/v0.6/ide-062.py"
+        "C:/Stas/shemka-plus/collector/collector3.py"
     ],
     "com_port": "COM6",
     "baudrate": "9600",
-    "mcu": "ATmega328P"
+    "mcu": "ATmega328P",
+    "editor_theme": "dark"
 }

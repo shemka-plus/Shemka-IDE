@@ -19,8 +19,7 @@ class SettingsTab(ctk.CTkFrame):
         # Interface settings
         ctk.CTkLabel(frame, text="Настройки интерфейса", font=("", 16)).grid(row=0, column=0, pady=10, sticky="w", columnspan=2)
 
-        # Theme selection
-        ctk.CTkLabel(frame, text="Тема:").grid(row=1, column=0, sticky="w")
+        ctk.CTkLabel(frame, text="Тема интерфейса:").grid(row=1, column=0, sticky="w")
         self.theme_var = ctk.StringVar(value=self.config.config["theme"])
         theme_menu = ctk.CTkOptionMenu(
             frame,
@@ -29,6 +28,16 @@ class SettingsTab(ctk.CTkFrame):
             command=self.change_theme
         )
         theme_menu.grid(row=1, column=1, pady=5, sticky="w")
+
+        #ctk.CTkLabel(frame, text="Тема редактора:").grid(row=3, column=0, sticky="w")
+        #self.editor_theme_var = ctk.StringVar(value=self.config.config.get("editor_theme", "default"))
+        #editor_theme_menu = ctk.CTkOptionMenu(
+        #    frame,
+        #    values=["default", "dark", "monokai", "solarized"],
+        #    variable=self.editor_theme_var,
+        #    command=self.change_editor_theme
+        #)
+        #editor_theme_menu.grid(row=3, column=1, pady=5, sticky="w")
 
         # Color theme selection
         ctk.CTkLabel(frame, text="Цветовая схема:").grid(row=2, column=0, sticky="w")
@@ -62,8 +71,14 @@ class SettingsTab(ctk.CTkFrame):
         ctk.CTkOptionMenu(frame, values=archives or ["Нет архивов"]).grid(row=6, column=1, pady=5)
 
     def change_theme(self, choice):
-        ctk.set_appearance_mode(choice)
+        """Объединенная функция смены темы"""
         self.config.set_theme(choice)
+        self.config.set_color_theme("blue")  # Фиксированная цветовая схема
+        
+        # Мгновенное применение темы
+        ctk.set_appearance_mode(choice)
+        from core.theme_manager import ThemeManager
+        ThemeManager().apply_theme(self.master)
 
     def change_color(self, choice):
         try:
@@ -95,3 +110,9 @@ class SettingsTab(ctk.CTkFrame):
         if messagebox.askyesno("Удаление", "Удалить текущий компилятор?"):
             mgr.uninstall()
             messagebox.showinfo("Удалено", "Компилятор удален. Перезапустите программу.")
+
+    def change_editor_theme(self, choice):
+        self.config.config["editor_theme"] = choice
+        self.config.save_config()
+        from core.theme_manager import ThemeManager
+        ThemeManager().apply_theme(self.master)

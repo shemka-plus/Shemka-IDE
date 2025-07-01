@@ -1,0 +1,16 @@
+{
+    "editor_bg": "#1E1E1E",
+    "editor_fg": "#E0E0E0",
+    "cursor": "#FFFFFF",
+    "selection": "#264F78",
+    "gutter_bg": "#252526",
+    "gutter_fg": "#858585",
+    "console_bg": "#2D2D2D",
+    "console_fg": "#CCCCCC",
+    "keyword": "#569CD6",
+    "define": "#C586C0",
+    "comment": "#6A9955",
+    "string": "#CE9178",
+    "arduino": "#DCDCAA",
+    "type": "#4EC9B0"
+}

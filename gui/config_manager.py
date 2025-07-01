@@ -8,11 +8,15 @@ class ConfigManager:
         self.default_config = {
             "theme": "dark",
             "color_theme": "blue",
+            "editor_theme": "default",
             "recent_files": [],
             "com_port": "",
             "baudrate": "9600",
             "mcu": "ATmega328P"
         }
+        self.available_themes = ["dark", "light", "system"]
+        self.available_color_themes = ["blue", "green", "dark-blue", "red", "purple"]
+        self.available_editor_themes = ["default", "monokai", "solarized", "dracula"]
         self.config = self._load_config()
     
     def _load_config(self):
