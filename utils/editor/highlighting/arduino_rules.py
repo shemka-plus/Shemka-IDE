@@ -25,35 +25,6 @@ rules = [
     (r'\b([A-Z_][A-Z0-9_]+)\b', "constant"),
 ]
 
-#from customtkinter import get_appearance_mode
-#
-#print(get_appearance_mode())
-#
-#appearance = get_appearance_mode()
-#if appearance == "Light":
-#    styles = {
-#        "keyword": "#0000BB",
-#        "define": "#8B008B",
-#        "comment": "#008000",
-#        "string": "#A31515",
-#        "arduino": "#1A1AA6",
-#        "type": "#008B8B",
-#        "number": "#1C00CF",
-#        "constant": "#AF0000",
-#    }
-#else:
-#    styles = {
-#        "keyword": "#569CD6",
-#        "define": "#C586C0",
-#        "comment": "#6A9955",
-#        "string": "#CE9178",
-#        "arduino": "#DFDF72",
-#        "type": "#4EC9B0",
-#        "number": "#B5CEA8",
-#        "constant": "#D16969",
-#    }
-
-
 def get_styles():
     from customtkinter import get_appearance_mode
     if get_appearance_mode() == "Light":
@@ -78,43 +49,3 @@ def get_styles():
             "number": "#B5CEA8",
             "constant": "#D16969",
         }
-
-
-## Цвета теперь определяются в темах, поэтому здесь их можно удалить
-#styles = {
-#    "keyword": "#569CD6",
-#    "define": "#C586C0",
-#    "comment": "#6A9955",
-#    "string": "#CE9178",
-#    "arduino": "#DFDF72",
-#    "type": "#4EC9B0",
-#    "number": "#B5CEA8",
-#    "constant": "#D16969",
-#}
-
-
-## utils/editor/highlighting/arduino_rules.py
-#arduino_keywords = [
-#    "pinMode", "digitalWrite", "digitalRead", "analogWrite", "analogRead",
-#    "delay", "millis", "Serial", "setup", "loop", "HIGH", "LOW", "INPUT", "OUTPUT"
-#]
-#
-#arduino_types = ["boolean", "byte", "word", "String"]
-#
-#rules = [
-#    (rf'\b({"|".join(arduino_keywords)})\b', "arduino"),
-#    (rf'\b({"|".join(arduino_types)})\b', "type"),
-#    (r'\b(int|char|float|void|return|if|else|while|for|break|continue|include|define|struct|sizeof)\b', "keyword"),
-#    (r'#define\s+\w+', "define"),
-#    (r'//.*?$|/\*.*?\*/', "comment"),
-#    (r'"(?:\\.|[^"\\])*"', "string"),
-#]
-#
-#styles = {
-#    "keyword": "#569CD6",
-#    "define": "#C586C0",
-#    "comment": "#6A9955",
-#    "string": "#CE9178",
-#    "arduino": "#DFDF72",
-#    "type": "#4EC9B0",
-#}

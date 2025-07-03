@@ -29,16 +29,6 @@ class SettingsTab(ctk.CTkFrame):
         )
         theme_menu.grid(row=1, column=1, pady=5, sticky="w")
 
-        #ctk.CTkLabel(frame, text="Тема редактора:").grid(row=3, column=0, sticky="w")
-        #self.editor_theme_var = ctk.StringVar(value=self.config.config.get("editor_theme", "default"))
-        #editor_theme_menu = ctk.CTkOptionMenu(
-        #    frame,
-        #    values=["default", "dark", "monokai", "solarized"],
-        #    variable=self.editor_theme_var,
-        #    command=self.change_editor_theme
-        #)
-        #editor_theme_menu.grid(row=3, column=1, pady=5, sticky="w")
-
         # Color theme selection
         ctk.CTkLabel(frame, text="Цветовая схема:").grid(row=2, column=0, sticky="w")
         self.color_var = ctk.StringVar(value=self.config.config["color_theme"])

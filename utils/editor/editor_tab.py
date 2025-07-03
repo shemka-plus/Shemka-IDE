@@ -1,4 +1,3 @@
-# utils/editor/editor_tab.py
 import customtkinter as ctk
 from tkinter import StringVar, Menu, Frame, filedialog
 from pathlib import Path
@@ -6,7 +5,6 @@ import re
 import serial.tools.list_ports
 from avr.compiler import AVRCompiler
 from avr.uploader import AVRUploader
-#from utils.editor.base_editor import SyntaxText
 from utils.editor.linenumbers import LineNumbers
 from utils.editor.highlighting.registry import get_rules_for_extension
 from gui.config_manager import ConfigManager
@@ -64,13 +62,6 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers = LineNumbers(editor_container, width=4)
         self.line_numbers.pack(side="left", fill="y")
 
-        #self.editor = SyntaxText(
-        #    editor_container, 
-        #    wrap="none", 
-        #    font=("Consolas", 12),
-        #    undo=True
-        #)
-        #self.editor = SyntaxText(parent_frame, wrap="none", font=("Consolas", 12))
         self.editor = SyntaxText(editor_container, wrap="none", font=("Consolas", 12), undo=True)
         self.editor.pack(side="left", fill="both", expand=True)
 
@@ -98,13 +89,6 @@ class EditorTab(ctk.CTkFrame):
         ctk.CTkButton(bottom_frame, text="Прошить", command=self.upload_code).pack(side="right", padx=5)
         ctk.CTkButton(bottom_frame, text="Компилировать", command=self.compile_code).pack(side="right", padx=5)
 
-        # Привязка событий
-        #self.editor.bind("<<Modified>>", self._on_editor_modified)
-        #self.setup_syntax_tags()
-
-    #def _on_editor_modified(self, event=None):
-        #self.schedule_syntax_highlight()
-
     def _apply_theme(self):
         """Применяет текущую тему и цветовую схему"""
         try:
@@ -117,65 +101,8 @@ class EditorTab(ctk.CTkFrame):
             editor_theme = "dark" if self.config.config["theme"] == "dark" else "default"
             ThemeManager().apply_editor_theme(self, editor_theme)
             
-            # Обновляем подсветку синтаксиса
-            #self.setup_syntax_tags()
-            #self.highlight_syntax()
         except Exception as e:
             print(f"Ошибка применения темы: {e}")
-
-    #def setup_syntax_tags(self):
-    #    ext = self._get_current_extension()
-    #    try:
-    #        rules, _ = get_rules_for_extension(ext)
-    #        for tag in {t for _, t in rules}:
-    #            self.editor.tag_configure(tag)
-    #    except Exception as e:
-    #        print(f"Ошибка настройки тегов синтаксиса: {e}")
-
-    #def schedule_syntax_highlight(self, event=None):
-    #    current_text = self.editor.get("1.0", "end-1c")
-    #    if current_text == self._last_highlighted_text:
-    #        return
-#
-    #    if self._highlight_job:
-    #        self.after_cancel(self._highlight_job)
-    #    self._highlight_job = self.after(100, self.highlight_syntax)
-
-    #def highlight_syntax(self):
-    #    try:
-    #        current_text = self.editor.get("1.0", "end-1c")
-    #        if current_text == self._last_highlighted_text:
-    #            return
-#
-    #        self._last_highlighted_text = current_text
-    #        ext = self._get_current_extension()
-    #        
-    #        try:
-    #            rules, _ = get_rules_for_extension(ext)
-    #            if not rules:
-    #                raise ValueError("Правила подсветки не найдены")
-    #        except Exception:
-    #            from utils.editor.highlighting.arduino_rules import rules as default_rules
-    #            rules = default_rules
-#
-    #        # Очистка существующих тегов
-    #        for tag in self.editor.tag_names():
-    #            if tag not in ("sel", "cursor"):
-    #                self.editor.tag_remove(tag, "1.0", "end")
-#
-    #        # Применение подсветки
-    #        for pattern, tag in rules:
-    #            try:
-    #                for match in re.finditer(pattern, current_text, flags=re.MULTILINE | re.DOTALL):
-    #                    start = f"1.0+{match.start()}c"
-    #                    end = f"1.0+{match.end()}c"
-    #                    self.editor.tag_add(tag, start, end)
-    #            except re.error:
-    #                continue
-#
-    #        self.editor.edit_modified(False)
-    #    except Exception as e:
-    #        print(f"Ошибка подсветки синтаксиса: {e}")
 
     def _get_current_extension(self):
         if hasattr(self, "current_file") and self.current_file:
@@ -300,5 +227,3 @@ class EditorTab(ctk.CTkFrame):
         from core.theme_manager import ThemeManager
         theme_manager = ThemeManager()
         theme_manager.apply_editor_theme(self)
-        #self.setup_syntax_tags()
-        #self.highlight_syntax()

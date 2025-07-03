@@ -1,14 +1,13 @@
-# core/compiler_manager.py
 from pathlib import Path
 import zipfile
 import shutil
-import os
+#import os
 
 class CompilerManager:
     def __init__(self):
         self.root = Path(__file__).parent.parent
         self.bin_path = self.root / "bin"
-        self.zips_dir = self.root / "compilers"
+        self.zips_dir = self.root / "module_update"
         self.required_exe = self.bin_path / "bin" / "avr-gcc.exe"
 
     def is_installed(self):
