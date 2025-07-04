@@ -1,7 +1,7 @@
 import customtkinter as ctk
-from tkinter import StringVar, Menu, Frame, filedialog
+from tkinter import StringVar, Menu, Frame, filedialog, font as tkfont
 from pathlib import Path
-import re
+#import re
 import serial.tools.list_ports
 from avr.compiler import AVRCompiler
 from avr.uploader import AVRUploader
@@ -9,7 +9,8 @@ from utils.editor.linenumbers import LineNumbers
 from utils.editor.highlighting.registry import get_rules_for_extension
 from gui.config_manager import ConfigManager
 from utils.editor.syntax_editor import SyntaxText
-import tkinter as tk
+from utils.editor.settings_window import EditorSettingsWindow
+#import tkinter as tk
 
 class EditorTab(ctk.CTkFrame):
     def __init__(self, parent, avr_tools=None, boards=None, config=None, tools_root=None):
@@ -19,8 +20,8 @@ class EditorTab(ctk.CTkFrame):
         self.config = config or ConfigManager()
         self.tools_root = tools_root
 
-        self.compiler = AVRCompiler(avr_tools=self.avr_tools, tools_root=self.tools_root)
-        self.uploader = AVRUploader(avr_tools)
+        self.font_family = "Consolas"
+        self.font_size = 12
         
         self.current_file = None
         self.recent_files = self.config.recent_files
@@ -30,10 +31,11 @@ class EditorTab(ctk.CTkFrame):
         self._highlight_job = None
         self._last_highlighted_text = ""
 
+        self.compiler = AVRCompiler(avr_tools=self.avr_tools, tools_root=self.tools_root)
+        self.uploader = AVRUploader(avr_tools)
+        
         self._setup_ui()
         self.update_ports()
-        
-        # Применяем тему сразу при создании
         self._apply_theme()
         
         if self.recent_files:
@@ -42,18 +44,37 @@ class EditorTab(ctk.CTkFrame):
                 self.load_file(last_file)
 
     def _setup_ui(self):
-        # Верхняя панель с кнопками
+        # Верхняя панель с меню
         top_frame = ctk.CTkFrame(self)
         top_frame.pack(fill="x", padx=5, pady=5)
 
-        ctk.CTkButton(top_frame, text="Новый", command=self.new_file).pack(side="left", padx=5)
-        ctk.CTkButton(top_frame, text="Открыть", command=self.open_file).pack(side="left", padx=5)
-        ctk.CTkButton(top_frame, text="Сохранить", command=self.save_file).pack(side="left", padx=5)
-        ctk.CTkButton(top_frame, text="Сохранить как", command=self.save_file_as).pack(side="left", padx=5)
+        # Меню "Файл"
+        self.file_menu = Menu(top_frame, tearoff=0)
+        self.file_menu.add_command(label="Новый", command=self.new_file)
+        self.file_menu.add_command(label="Открыть", command=self.open_file)
+        self.file_menu.add_command(label="Сохранить", command=self.save_file)
+        self.file_menu.add_command(label="Сохранить как", command=self.save_file_as)
+        
+        self.file_button = ctk.CTkButton(top_frame, text="Файл", command=self.show_file_menu)
+        self.file_button.pack(side="left", padx=5)
 
+        # Меню "История"
         self.recent_menu = Menu(top_frame, tearoff=0)
         self.recent_button = ctk.CTkButton(top_frame, text="История", command=self.show_recent_menu)
         self.recent_button.pack(side="left", padx=5)
+
+        # Кнопка настроек с иконкой ⚙
+        self.settings_button = ctk.CTkButton(
+            top_frame, 
+            text="⚙", 
+            width=30,
+            command=self.open_settings_window
+        )
+        self.settings_button.pack(side="left", padx=5)
+
+        # Кнопки компиляции и прошивки
+        ctk.CTkButton(top_frame, text="Компилировать", command=self.compile_code).pack(side="right", padx=5)
+        ctk.CTkButton(top_frame, text="Прошить", command=self.upload_code).pack(side="right", padx=5)
 
         # Область редактора
         editor_container = Frame(self)
@@ -62,7 +83,7 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers = LineNumbers(editor_container, width=4)
         self.line_numbers.pack(side="left", fill="y")
 
-        self.editor = SyntaxText(editor_container, wrap="none", font=("Consolas", 12), undo=True)
+        self.editor = SyntaxText(editor_container, wrap="none", font=(self.font_family, self.font_size), undo=True)
         self.editor.pack(side="left", fill="both", expand=True)
 
         self.line_numbers.text_widget = self.editor
@@ -70,24 +91,79 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers.update_line_numbers()
 
         # Консоль вывода
-        self.console = SyntaxText(self, height=10, font=("Consolas", 10))
+        self.console = SyntaxText(self, height=10, font=(self.font_family, self.font_size))
         self.console.configure(state="disabled")
         self.console.pack(fill="x", padx=5, pady=5)
 
-        # Нижняя панель управления
-        bottom_frame = ctk.CTkFrame(self)
-        bottom_frame.pack(fill="x", padx=5, pady=5)
+    def open_settings_window(self):
+        """Открывает окно настроек"""
+        if hasattr(self, '_settings_window') and self._settings_window.winfo_exists():
+            self._settings_window.lift()
+            return
+            
+        self._settings_window = EditorSettingsWindow(
+            self,
+            mcu_var=self.mcu_var,
+            com_var=self.com_var,
+            boards=self.boards,
+            font_family=self.font_family,
+            font_size=self.font_size
+        )
+        
+        # Ждем закрытия окна и применяем настройки
+        self.wait_window(self._settings_window)
+        self._apply_font_settings()
 
-        ctk.CTkLabel(bottom_frame, text="Микроконтроллер:").pack(side="left", padx=5)
-        ctk.CTkOptionMenu(bottom_frame, variable=self.mcu_var, values=list(self.boards.keys())).pack(side="left")
+    def _apply_font_settings(self):
+        """Применяет настройки шрифта"""
+        if hasattr(self, '_settings_window'):
+            # Создаем новый шрифт
+            new_font = (self._settings_window.font_family, self._settings_window.font_size)
+            
+            # Применяем ко всем элементам
+            self.editor.configure(font=new_font)
+            self.console.configure(font=new_font)
+            self.line_numbers.configure(font=new_font)
+            
+            # Обновляем нумерацию строк
+            self.line_numbers.update_line_numbers()
+            
+            # Сохраняем новые значения
+            self.font_family = self._settings_window.font_family
+            self.font_size = self._settings_window.font_size
 
-        ctk.CTkLabel(bottom_frame, text="Порт:").pack(side="left", padx=5)
-        self.port_menu = ctk.CTkOptionMenu(bottom_frame, variable=self.com_var, values=[])
-        self.port_menu.pack(side="left")
-        ctk.CTkButton(bottom_frame, text="Обновить", width=30, command=self.update_ports).pack(side="left", padx=5)
+    def show_file_menu(self):
+        try:
+            self.file_menu.tk_popup(self.file_button.winfo_rootx(), self.file_button.winfo_rooty() + 30)
+        finally:
+            self.file_menu.grab_release()
 
-        ctk.CTkButton(bottom_frame, text="Прошить", command=self.upload_code).pack(side="right", padx=5)
-        ctk.CTkButton(bottom_frame, text="Компилировать", command=self.compile_code).pack(side="right", padx=5)
+    def show_settings_menu(self):
+        try:
+            self.settings_menu.tk_popup(self.settings_button.winfo_rootx(), self.settings_button.winfo_rooty() + 30)
+        finally:
+            self.settings_menu.grab_release()
+
+    def show_mcu_menu(self):
+        mcu_menu = Menu(self, tearoff=0)
+        for mcu in self.boards.keys():
+            mcu_menu.add_command(label=mcu, command=lambda m=mcu: self.mcu_var.set(m))
+        
+        try:
+            mcu_menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
+        finally:
+            mcu_menu.grab_release()
+
+    def show_port_menu(self):
+        self.update_ports()
+        port_menu = Menu(self, tearoff=0)
+        for port in self.port_menu.cget("values"):
+            port_menu.add_command(label=port, command=lambda p=port: self.com_var.set(p))
+        
+        try:
+            port_menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
+        finally:
+            port_menu.grab_release()
 
     def _apply_theme(self):
         """Применяет текущую тему и цветовую схему"""
@@ -174,16 +250,19 @@ class EditorTab(ctk.CTkFrame):
     def update_ports(self):
         try:
             ports = [port.device for port in serial.tools.list_ports.comports()]
-            self.port_menu.configure(values=ports)
-            if ports:
-                if self.com_var.get() in ports:
-                    self.com_var.set(self.com_var.get())
-                else:
-                    self.com_var.set(ports[0])
+            if not ports:
+                self.log("Нет доступных COM-портов")
+                return False
+            return True
         except Exception as e:
-            self.log(f"Ошибка обновления портов: {e}")
+            self.log(f"Ошибка обновления портов: {str(e)}")
+            return False
 
     def compile_code(self):
+        if not self.update_ports():
+            self.log("Проверьте подключение COM-порта перед компиляцией")
+            return
+            
         source = self.editor.get("1.0", "end-1c")
         mcu = self.mcu_var.get()
 

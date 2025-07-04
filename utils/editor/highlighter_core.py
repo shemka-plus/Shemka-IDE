@@ -12,7 +12,8 @@ def setup_syntax_tags(widget):
     try:
         rules, styles = get_rules_for_extension(ext)
     except:
-        from utils.editor.highlighting.arduino_rules import rules, styles
+        from utils.editor.highlighting.arduino_rules import rules, get_styles
+        styles = get_styles()
 
     widget.tag_delete(*widget.tag_names())
 
