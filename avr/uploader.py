@@ -11,10 +11,20 @@ class AVRUploader:
         self.bin_dir = self.tools_root / "bin"
         self.avrdude_conf = self.tools_root / "etc" / "avrdude.conf"  # Стандартный путь
 
-    def upload(self, hex_path, mcu, programmer="arduino", port="COM1", baud="115200", callback=None):
-        """Загружает прошивку в микроконтроллер"""
+    def upload(self, hex_path, mcu, programmer=None, port="COM1", baud="115200", uploader_type="uart", callback=None):
         def runner():
             try:
+                if uploader_type == "isp":
+                    programmer = "stk500v1"
+                    if not baud:
+                        baud = "19200"
+                elif uploader_type == "uart":
+                    programmer = "arduino"
+                    if not baud:
+                        baud = "115200"
+                else:
+                    programmer = "arduino"
+
                 cmd = [
                     str(self.avr_tools['avrdude']),
                     "-C", str(self.avrdude_conf),
@@ -22,10 +32,10 @@ class AVRUploader:
                     "-c", programmer,
                     "-P", port,
                     "-b", baud,
+                    "-D",
                     "-U", f"flash:w:{hex_path}:i"
                 ]
 
-                # Обновляем PATH
                 env = os.environ.copy()
                 env["PATH"] = os.pathsep.join([
                     str(self.bin_dir),
@@ -48,3 +58,42 @@ class AVRUploader:
         thread = threading.Thread(target=runner, daemon=True)
         thread.start()
         return thread
+
+#    def upload(self, hex_path, mcu, programmer="arduino", port="COM1", baud="115200", callback=None):
+#        """Загружает прошивку в микроконтроллер"""
+#        def runner():
+#            try:
+#                cmd = [
+#                    str(self.avr_tools['avrdude']),
+#                    "-C", str(self.avrdude_conf),
+#                    "-p", mcu,
+#                    "-c", programmer,
+#                    "-P", port,
+#                    "-b", baud,
+#                    "-U", f"flash:w:{hex_path}:i"
+#                ]
+#
+#                # Обновляем PATH
+#                env = os.environ.copy()
+#                env["PATH"] = os.pathsep.join([
+#                    str(self.bin_dir),
+#                    env.get("PATH", "")
+#                ])
+#
+#                print(f"[Загрузка] {' '.join(cmd)}")
+#                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, env=env)
+#
+#                if callback:
+#                    if result.returncode == 0:
+#                        callback(True, None)
+#                    else:
+#                        callback(False, result.stderr)
+#
+#            except Exception as e:
+#                if callback:
+#                    callback(False, str(e))
+#
+#        thread = threading.Thread(target=runner, daemon=True)
+#        thread.start()
+#        return thread
+#

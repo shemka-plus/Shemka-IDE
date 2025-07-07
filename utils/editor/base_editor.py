@@ -30,20 +30,26 @@ class BaseEditor(tk.Text):
         self.bind("<Key>", self._handle_shortcuts_by_keycode)
 
     def _handle_shortcuts_by_keycode(self, event):
-        # Коды клавиш для русской раскладки (QWERTY)
         keycode = event.keycode
-        if event.state & 0x4:  # Проверяем, что нажат Ctrl
-            if keycode == 67:  # C (англ) или С (рус)
+        if event.state & 0x4:  # Ctrl
+            if keycode == 67:  # C
                 self.event_generate("<<Copy>>")
-            elif keycode == 86:  # V (англ) или М (рус)
+                return "break"
+            elif keycode == 86:  # V
                 self.event_generate("<<Paste>>")
-            elif keycode == 88:  # X (англ) или Ч (рус)
+                return "break"
+            elif keycode == 88:  # X
                 self.event_generate("<<Cut>>")
-            elif keycode == 65:  # A (англ) или Ф (рус)
+                return "break"
+            elif keycode == 65:  # A
                 self.event_generate("<<SelectAll>>")
-            elif keycode == 90:  # Z (англ) или Я (рус)
+                return "break"
+            elif keycode == 90:  # Z
                 self.event_generate("<<Undo>>")
-            elif keycode == 89:  # Y (англ) или Н (рус)
+                return "break"
+            elif keycode == 89:  # Y
                 self.event_generate("<<Redo>>")
-        #print(f"Keycode: {event.keycode}, Keysym: {event.keysym}, Char: {event.char}")
-        return "break"
+                return "break"
+        # Не Ctrl — не мешаем вводу
+        return None
+

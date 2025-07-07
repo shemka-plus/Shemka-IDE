@@ -259,9 +259,9 @@ class EditorTab(ctk.CTkFrame):
             return False
 
     def compile_code(self):
-        if not self.update_ports():
-            self.log("Проверьте подключение COM-порта перед компиляцией")
-            return
+        #if not self.update_ports():
+        #    self.log("Проверьте подключение COM-порта перед компиляцией")
+        #    return
             
         source = self.editor.get("1.0", "end-1c")
         mcu = self.mcu_var.get()

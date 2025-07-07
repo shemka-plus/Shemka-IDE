@@ -12,7 +12,9 @@ class ConfigManager:
             "recent_files": [],
             "com_port": "",
             "baudrate": "9600",
-            "mcu": "ATmega328P"
+            "mcu": "ATmega328P",
+            "uploader_type": "uart"  # или "isp"
+
         }
         self.available_themes = ["dark", "light", "system"]
         self.available_color_themes = ["blue", "green", "dark-blue", "red", "purple"]
@@ -36,6 +38,14 @@ class ConfigManager:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Ошибка сохранения конфига: {e}")
+
+    def get_uploader_type(self):
+        return self.config.get("uploader_type", "uart")
+
+    def set_uploader_type(self, value):
+        self.config["uploader_type"] = value
+        self.save_config()
+
 
     @property
     def recent_files(self):
