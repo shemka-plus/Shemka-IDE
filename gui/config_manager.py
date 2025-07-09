@@ -76,3 +76,10 @@ class ConfigManager:
         self.config["baudrate"] = baudrate
         self.config["mcu"] = mcu
         self.save_config()
+
+    def get_bootloader(self):
+        return self.config.get("bootloader", "auto")
+
+    def set_bootloader(self, value):
+        self.config["bootloader"] = value
+        self.save_config()

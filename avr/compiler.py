@@ -42,10 +42,6 @@ class AVRCompiler:
                 env.get("PATH", "")
             ])
 
-            # Соберем список всех исходников ядра
-            #core_files = list(self.cores_dir.glob("*.c")) + \
-            #            list(self.cores_dir.glob("*.cpp")) + \
-            #            list(self.cores_dir.glob("*.S"))
             core_files = [
                 f for f in self.cores_dir.glob("*.*")
                 if f.suffix in [".c", ".cpp", ".S"] and f.name != "wiring_pulse.c"

@@ -15,6 +15,7 @@ class InfoTab(ctk.CTkFrame):
 
         self.about_path = self.data_dir / "about.txt"
         self.instructions_path = self.data_dir / "instructions.txt"
+        self.history_path = self.data_dir / "history.txt"
 
         from customtkinter import get_appearance_mode
         print(get_appearance_mode())
@@ -34,6 +35,9 @@ class InfoTab(ctk.CTkFrame):
         self.about_btn.pack(side="left", padx=5)
 
         self.instr_btn = ctk.CTkButton(button_frame, text="Инструкция", command=self.show_instructions)
+        self.instr_btn.pack(side="left", padx=5)
+
+        self.instr_btn = ctk.CTkButton(button_frame, text="История", command=self.show_history)
         self.instr_btn.pack(side="left", padx=5)
 
         # Область контента
@@ -85,6 +89,9 @@ class InfoTab(ctk.CTkFrame):
 
     def show_instructions(self):
         self.load_text(self.instructions_path)
+
+    def show_history(self):
+        self.load_text(self.history_path)
 
     def load_text(self, filepath, prepend=""):
         try:

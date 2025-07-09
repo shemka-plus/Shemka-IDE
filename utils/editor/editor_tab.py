@@ -10,6 +10,7 @@ from utils.editor.highlighting.registry import get_rules_for_extension
 from gui.config_manager import ConfigManager
 from utils.editor.syntax_editor import SyntaxText
 from utils.editor.settings_window import EditorSettingsWindow
+from utils.ui.tooltip import CTkTooltip
 #import tkinter as tk
 
 class EditorTab(ctk.CTkFrame):
@@ -22,6 +23,13 @@ class EditorTab(ctk.CTkFrame):
 
         self.font_family = "Consolas"
         self.font_size = 12
+
+        self.font_family = ctk.StringVar(value=self.config.config.get("font_family", "Consolas"))
+        self.font_size = ctk.IntVar(value=self.config.config.get("font_size", 12))
+
+
+        #self.font_family = ctk.StringVar(value="Consolas")
+        #self.font_size = ctk.IntVar(value=12)
         
         self.current_file = None
         self.recent_files = self.config.recent_files
@@ -44,9 +52,9 @@ class EditorTab(ctk.CTkFrame):
                 self.load_file(last_file)
 
     def _setup_ui(self):
-        # Верхняя панель с меню
+        # Верхняя панель с кнопками
         top_frame = ctk.CTkFrame(self)
-        top_frame.pack(fill="x", padx=5, pady=5)
+        top_frame.pack(fill="x", pady=5)
 
         # Меню "Файл"
         self.file_menu = Menu(top_frame, tearoff=0)
@@ -54,27 +62,40 @@ class EditorTab(ctk.CTkFrame):
         self.file_menu.add_command(label="Открыть", command=self.open_file)
         self.file_menu.add_command(label="Сохранить", command=self.save_file)
         self.file_menu.add_command(label="Сохранить как", command=self.save_file_as)
-        
-        self.file_button = ctk.CTkButton(top_frame, text="Файл", command=self.show_file_menu)
+
+        self.file_button = ctk.CTkButton(top_frame, text="📂 Файл ⮟", width=30, command=self.show_file_menu)
         self.file_button.pack(side="left", padx=5)
+        CTkTooltip(self.file_button, "Файл")
 
         # Меню "История"
         self.recent_menu = Menu(top_frame, tearoff=0)
-        self.recent_button = ctk.CTkButton(top_frame, text="История", command=self.show_recent_menu)
+        self.recent_button = ctk.CTkButton(top_frame, text="🕘 История ⮟", width=30, command=self.show_recent_menu)
         self.recent_button.pack(side="left", padx=5)
+        CTkTooltip(self.recent_button, "История файлов")
 
-        # Кнопка настроек с иконкой ⚙
-        self.settings_button = ctk.CTkButton(
-            top_frame, 
-            text="⚙", 
-            width=30,
-            command=self.open_settings_window
-        )
+        # Undo / Redo
+        self.Undo_button = ctk.CTkButton(top_frame, text="⮌", width=30, command=lambda: self.editor.event_generate("<<Undo>>"))
+        self.Undo_button.pack(side="left", padx=5)
+        CTkTooltip(self.Undo_button, "Отменить (Ctrl+Z)")
+
+        self.Redo_button = ctk.CTkButton(top_frame, text="⮎", width=30, command=lambda: self.editor.event_generate("<<Redo>>"))
+        self.Redo_button.pack(side="left", padx=5)
+        CTkTooltip(self.Redo_button, "Повторить (Ctrl+Y)")
+
+        # Кнопка настроек
+        self.settings_button = ctk.CTkButton(top_frame, text="⚙", width=30, command=self.open_settings_window)
         self.settings_button.pack(side="left", padx=5)
+        CTkTooltip(self.settings_button, "Настройки")
 
-        # Кнопки компиляции и прошивки
-        ctk.CTkButton(top_frame, text="Компилировать", command=self.compile_code).pack(side="right", padx=5)
-        ctk.CTkButton(top_frame, text="Прошить", command=self.upload_code).pack(side="right", padx=5)
+        # Кнопки компиляции и загрузки
+        compile_btn = ctk.CTkButton(top_frame, text="🧩 Компилировать", command=self.compile_code)
+        compile_btn.pack(side="right", padx=5)
+        CTkTooltip(compile_btn, "Скомпилировать текущий файл")
+
+        upload_label = "Прошить через UART" if self.config.get_uploader_type() == "uart" else "Прошить через ISP"
+        upload_btn = ctk.CTkButton(top_frame, text=upload_label, command=self.upload_code)
+        upload_btn.pack(side="right", padx=5)
+        CTkTooltip(upload_btn, "Загрузить прошивку в микроконтроллер")
 
         # Область редактора
         editor_container = Frame(self)
@@ -83,7 +104,11 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers = LineNumbers(editor_container, width=4)
         self.line_numbers.pack(side="left", fill="y")
 
-        self.editor = SyntaxText(editor_container, wrap="none", font=(self.font_family, self.font_size), undo=True)
+        #self.editor = SyntaxText(editor_container, wrap="none", font=(self.font_family, self.font_size), undo=True)
+        self.editor = SyntaxText(editor_container, wrap="none",
+                         font=(self.font_family.get(), self.font_size.get()),
+                         undo=True)
+
         self.editor.pack(side="left", fill="both", expand=True)
 
         self.line_numbers.text_widget = self.editor
@@ -91,35 +116,39 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers.update_line_numbers()
 
         # Консоль вывода
-        self.console = SyntaxText(self, height=10, font=(self.font_family, self.font_size))
+        #(self, height=10, font=(self.font_family, self.font_size))
+        self.console = SyntaxText(self, height=10,
+                          font=(self.font_family.get(), self.font_size.get()))
+
         self.console.configure(state="disabled")
         self.console.pack(fill="x", padx=5, pady=5)
 
     def open_settings_window(self):
-        """Открывает окно настроек"""
         if hasattr(self, '_settings_window') and self._settings_window.winfo_exists():
             self._settings_window.lift()
             return
-            
+
         self._settings_window = EditorSettingsWindow(
             self,
             mcu_var=self.mcu_var,
             com_var=self.com_var,
             boards=self.boards,
             font_family=self.font_family,
-            font_size=self.font_size
+            font_size=self.font_size,
+            uploader_type=self.config.get_uploader_type(),
+            bootloader=self.config.config.get("bootloader", "auto")
         )
-        
-        # Ждем закрытия окна и применяем настройки
+
         self.wait_window(self._settings_window)
         self._apply_font_settings()
 
+        
     def _apply_font_settings(self):
         """Применяет настройки шрифта"""
         if hasattr(self, '_settings_window'):
             # Создаем новый шрифт
-            new_font = (self._settings_window.font_family, self._settings_window.font_size)
-            
+            #new_font = (self._settings_window.font_family, self._settings_window.font_size)
+            new_font = (self.font_family.get(), self.font_size.get())
             # Применяем ко всем элементам
             self.editor.configure(font=new_font)
             self.console.configure(font=new_font)

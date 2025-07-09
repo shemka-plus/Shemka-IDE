@@ -1,19 +1,18 @@
 import customtkinter as ctk
 import serial.tools.list_ports
 from tkinter import font as tkfont
-from PIL import Image
 from pathlib import Path
 
 
 class EditorSettingsWindow(ctk.CTkToplevel):
-    def __init__(self, parent, mcu_var, com_var, boards, font_family="Consolas", font_size=12,
-                 uploader_type="uart", baudrate="115200"):
+    def __init__(self, parent, mcu_var, com_var, boards,
+                 font_family, font_size, uploader_type="uart", bootloader="auto"):
         super().__init__(parent)
         self.title("Настройки редактора")
-        self.geometry("420x450")
+        self.geometry("420x480")
         self.resizable(False, False)
 
-        # Устанавливаем иконку
+        # Иконка
         icon_path = Path(__file__).parent.parent.parent / "data" / "Schemka-ico.ico"
         if icon_path.exists():
             self.iconbitmap(icon_path)
@@ -24,10 +23,10 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         self.mcu_var = mcu_var
         self.com_var = com_var
         self.boards = boards
-        self.font_family = font_family
-        self.font_size = font_size
+        self.font_family = font_family  # ctk.StringVar
+        self.font_size = font_size      # ctk.IntVar
         self.uploader_var = ctk.StringVar(value=uploader_type)
-        self.baud_var = ctk.StringVar(value=baudrate)
+        self.bootloader_var = ctk.StringVar(value=bootloader)
 
         # Вкладки
         self.tabview = ctk.CTkTabview(self)
@@ -49,6 +48,7 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         ctk.CTkButton(btn_frame, text="Отмена", command=self.destroy).pack(side="right", padx=5)
 
         self._center_window()
+        self._toggle_bootloader_options()
 
     def _center_window(self):
         self.update_idletasks()
@@ -92,47 +92,60 @@ class EditorSettingsWindow(ctk.CTkToplevel):
                     ).pack(anchor="w", padx=20, pady=2)
         except Exception as e:
             ctk.CTkLabel(tab, text=f"Ошибка получения портов: {str(e)}").pack()
-            self.ports = []
 
-        # Baudrate
-        ctk.CTkLabel(tab, text="Скорость (baudrate):").pack(pady=(10, 5))
-        ctk.CTkEntry(tab, textvariable=self.baud_var).pack(fill="x", padx=20)
-
-        # Загрузчик
         ctk.CTkLabel(tab, text="Метод прошивки:").pack(pady=(10, 5))
-        ctk.CTkOptionMenu(
-            tab,
-            variable=self.uploader_var,
-            values=["uart", "isp"]
-        ).pack(fill="x", padx=20)
+        uploader_frame = ctk.CTkFrame(tab)
+        uploader_frame.pack(fill="x", padx=20, pady=5)
+
+        ctk.CTkRadioButton(uploader_frame, text="UART", variable=self.uploader_var, value="uart",
+                           command=self._toggle_bootloader_options).pack(anchor="w")
+        ctk.CTkRadioButton(uploader_frame, text="ISP", variable=self.uploader_var, value="isp",
+                           command=self._toggle_bootloader_options).pack(anchor="w")
+
+        self.bootloader_frame = ctk.CTkFrame(tab)
+        self.bootloader_frame.pack(fill="x", padx=20, pady=(5, 0))
+
+        ctk.CTkLabel(self.bootloader_frame, text="Загрузчик (UART):").pack(anchor="w", pady=(5, 0))
+        ctk.CTkRadioButton(self.bootloader_frame, text="Новый", variable=self.bootloader_var, value="new").pack(anchor="w")
+        ctk.CTkRadioButton(self.bootloader_frame, text="Старый", variable=self.bootloader_var, value="old").pack(anchor="w")
+        ctk.CTkRadioButton(self.bootloader_frame, text="Авто", variable=self.bootloader_var, value="auto").pack(anchor="w")
 
     def _setup_font_tab(self):
         tab = self.tabview.tab("Шрифт")
         ctk.CTkLabel(tab, text="Шрифт:").pack(pady=(10, 5))
 
-        self.font_family_var = ctk.StringVar(value=self.font_family)
         font_families = sorted(tkfont.families())
         ctk.CTkOptionMenu(
             tab,
             values=font_families,
-            variable=self.font_family_var
+            variable=self.font_family
         ).pack(fill="x", padx=20, pady=5)
 
         ctk.CTkLabel(tab, text="Размер:").pack(pady=(10, 5))
-
-        self.font_size_var = ctk.StringVar(value=str(self.font_size))
         ctk.CTkOptionMenu(
             tab,
             values=["8", "10", "12", "14", "16", "18", "20", "22", "24"],
-            variable=self.font_size_var
+            variable=self.font_size
         ).pack(fill="x", padx=20, pady=5)
 
+    def _toggle_bootloader_options(self):
+        if self.uploader_var.get() == "uart":
+            self.bootloader_frame.pack(fill="x", padx=20, pady=(5, 0))
+        else:
+            self.bootloader_frame.pack_forget()
+
     def _apply_settings(self):
-        # Обработка выбора старого загрузчика
         if self.mcu_var.get() == "ATmega328P (Old Bootloader)":
             self.mcu_var.set("ATmega328P")
-            self.baud_var.set("57600")
+            self.bootloader_var.set("old")
 
-        self.font_family = self.font_family_var.get()
-        self.font_size = int(self.font_size_var.get())
+        config = self.master.config
+        config.config["com_port"] = self.com_var.get()
+        config.config["mcu"] = self.mcu_var.get()
+        config.config["uploader_type"] = self.uploader_var.get()
+        config.config["bootloader"] = self.bootloader_var.get()
+        config.config["font_family"] = self.font_family.get()
+        config.config["font_size"] = self.font_size.get()
+        config.save_config()
+
         self.destroy()
