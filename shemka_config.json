@@ -13,12 +13,12 @@
         "C:/Stas/shemka-plus/v0.2/ide02.py",
         "C:/Stas/shemka-plus/shemka+IDE/build/sketch.c"
     ],
-    "com_port": "COM6",
+    "com_port": "COM8",
     "baudrate": "9600",
     "mcu": "ATmega328P",
     "editor_theme": "dark",
-    "uploader_type": "uart",
-    "bootloader": "auto",
+    "uploader_type": "isp",
+    "bootloader": "new",
     "font_family": "Consolas",
     "font_size": 12
 }

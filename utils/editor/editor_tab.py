@@ -11,10 +11,11 @@ from gui.config_manager import ConfigManager
 from utils.editor.syntax_editor import SyntaxText
 from utils.editor.settings_window import EditorSettingsWindow
 from utils.ui.tooltip import CTkTooltip
-#import tkinter as tk
+from tkinter import messagebox
+from core.compiler_manager import CompilerManager
 
 class EditorTab(ctk.CTkFrame):
-    def __init__(self, parent, avr_tools=None, boards=None, config=None, tools_root=None):
+    def __init__(self, parent, avr_tools=None, boards=None, config=None, tools_root=None, undo=True, autoseparators=True, maxundo=-1):
         super().__init__(parent)
         self.avr_tools = avr_tools
         self.boards = boards
@@ -26,11 +27,7 @@ class EditorTab(ctk.CTkFrame):
 
         self.font_family = ctk.StringVar(value=self.config.config.get("font_family", "Consolas"))
         self.font_size = ctk.IntVar(value=self.config.config.get("font_size", 12))
-
-
-        #self.font_family = ctk.StringVar(value="Consolas")
-        #self.font_size = ctk.IntVar(value=12)
-        
+ 
         self.current_file = None
         self.recent_files = self.config.recent_files
         self.mcu_var = StringVar(value=self.config.config.get("mcu", "ATmega328P"))
@@ -104,10 +101,10 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers = LineNumbers(editor_container, width=4)
         self.line_numbers.pack(side="left", fill="y")
 
-        #self.editor = SyntaxText(editor_container, wrap="none", font=(self.font_family, self.font_size), undo=True)
         self.editor = SyntaxText(editor_container, wrap="none",
                          font=(self.font_family.get(), self.font_size.get()),
-                         undo=True)
+                         undo=True, autoseparators=True, maxundo=-1)
+
 
         self.editor.pack(side="left", fill="both", expand=True)
 
@@ -116,7 +113,6 @@ class EditorTab(ctk.CTkFrame):
         self.line_numbers.update_line_numbers()
 
         # Консоль вывода
-        #(self, height=10, font=(self.font_family, self.font_size))
         self.console = SyntaxText(self, height=10,
                           font=(self.font_family.get(), self.font_size.get()))
 
@@ -147,7 +143,6 @@ class EditorTab(ctk.CTkFrame):
         """Применяет настройки шрифта"""
         if hasattr(self, '_settings_window'):
             # Создаем новый шрифт
-            #new_font = (self._settings_window.font_family, self._settings_window.font_size)
             new_font = (self.font_family.get(), self.font_size.get())
             # Применяем ко всем элементам
             self.editor.configure(font=new_font)
@@ -263,7 +258,6 @@ class EditorTab(ctk.CTkFrame):
             self.current_file = path
             self.config.add_recent_file(path)
             self.log(f"Открыт файл: {path}")
-            #self.highlight_syntax()
         except Exception as e:
             self.log(f"Ошибка открытия файла: {e}")
 
@@ -288,10 +282,21 @@ class EditorTab(ctk.CTkFrame):
             return False
 
     def compile_code(self):
-        #if not self.update_ports():
-        #    self.log("Проверьте подключение COM-порта перед компиляцией")
-        #    return
-            
+        compiler_manager = CompilerManager()
+        if not compiler_manager.is_installed():
+            archives = compiler_manager.available_archives()
+            if archives:
+                if messagebox.askyesno("Установка компилятора", f"Компилятор не найден. Установить из {archives[0].name}?"):
+                    compiler_manager.install_from_archive(archives[0])
+                    messagebox.showinfo("Установлено", "Компилятор успешно установлен.")
+                else:
+                    self.log("Компиляция отменена. Компилятор не установлен.")
+                    return
+            else:
+                messagebox.showwarning("Нет компилятора", "Папка 'compilers/' пуста. Установите компилятор вручную.")
+                self.log("Компиляция невозможна — нет компилятора.")
+                return
+
         source = self.editor.get("1.0", "end-1c")
         mcu = self.mcu_var.get()
 
@@ -317,7 +322,13 @@ class EditorTab(ctk.CTkFrame):
         def callback(success, message):
             self.upload_callback(success, message)
 
-        self.uploader.upload(str(hex_path), mcu=mcu, port=port, callback=callback)
+        #self.uploader.upload(str(hex_path), mcu=mcu, port=port, callback=callback)
+        self.uploader.upload(
+            hex_path=str(hex_path),
+            mcu=mcu,
+            port=port,
+            callback=callback
+        )
 
     def upload_callback(self, success, message):
         self.log(message)

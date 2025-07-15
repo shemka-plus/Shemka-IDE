@@ -1,4 +1,3 @@
-# gui/main_window.py
 import customtkinter as ctk
 from utils.editor.editor_tab import EditorTab
 from utils.hex_tools import HexToolsTab
@@ -12,12 +11,12 @@ from core.theme_manager import ThemeManager  # Прямой импорт из м
 
 
 class MainWindow(ctk.CTk):
-    def __init__(self, avr_tools, boards, tools_root=None):
+    def __init__(self, avr_tools, boards):
         super().__init__()
         self.avr_tools = avr_tools
         self.boards = boards
         self.config = ConfigManager()
-        self.tools_root = tools_root
+        #self.tools_root = tools_root
         
         # Инициализация theme_manager
         self.theme_manager = ThemeManager()
@@ -61,7 +60,6 @@ class MainWindow(ctk.CTk):
                 avr_tools=self.avr_tools,
                 boards=self.boards,
                 config=self.config,
-                tools_root=self.tools_root
             )
             # Применяем тему к каждой вкладке
             self.theme_manager.apply_theme(tab_instance)

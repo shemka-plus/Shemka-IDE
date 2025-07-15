@@ -6,7 +6,7 @@ import re
 class AVRCompiler:
     def __init__(self, avr_tools, tools_root=None):
         self.avr_tools = avr_tools
-        self.tools_root = Path(tools_root) if tools_root else Path(__file__).parent.parent.parent / "bin"
+        self.tools_root = Path(tools_root) if tools_root else Path(__file__).parent.parent / "bin"
         self.tools_root = self.tools_root.resolve()
 
         self.bin_dir = self.tools_root / "bin"
@@ -47,7 +47,6 @@ class AVRCompiler:
                 if f.suffix in [".c", ".cpp", ".S"] and f.name != "wiring_pulse.c"
             ]
 
-
             object_files = []
 
             # Компиляция всех исходников по отдельности
@@ -71,12 +70,12 @@ class AVRCompiler:
                 if file.suffix == ".cpp":
                     cmd.insert(2, "-std=gnu++11")
 
-                print(f"[Компиляция] {' '.join(cmd)}")
                 result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+
                 if result.returncode != 0:
                     msg = f"Ошибка компиляции {file.name}:\n{result.stderr}"
                     if callback:
-                        callback(False, msg, [])
+                        callback(True, msg, [])
                     return False, msg, []
 
             # Линковка
@@ -91,7 +90,7 @@ class AVRCompiler:
             if result.returncode != 0:
                 msg = f"Ошибка линковки:\n{result.stderr}"
                 if callback:
-                    callback(False, msg, [])
+                    callback(True, msg, [])
                 return False, msg, []
 
             # Преобразование в .hex
@@ -106,7 +105,7 @@ class AVRCompiler:
             if result.returncode != 0:
                 msg = f"Ошибка при objcopy:\n{result.stderr}"
                 if callback:
-                    callback(False, msg, [])
+                    callback(True, msg, [])
                 return False, msg, []
 
             if callback:

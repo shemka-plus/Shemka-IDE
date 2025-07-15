@@ -47,6 +47,11 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         ctk.CTkButton(btn_frame, text="Применить", command=self._apply_settings).pack(side="right", padx=5)
         ctk.CTkButton(btn_frame, text="Отмена", command=self.destroy).pack(side="right", padx=5)
 
+        ## Кнопка восстановления загрузчика (через ISP)
+        if self.uploader_var.get() == "isp":
+            ctk.CTkButton(btn_frame, text="🔁 Восстановить загрузчик", command=self._burn_bootloader).pack(side="left", padx=5)
+
+
         self._center_window()
         self._toggle_bootloader_options()
 
@@ -149,3 +154,57 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         config.save_config()
 
         self.destroy()
+
+    def _burn_bootloader(self):
+        import subprocess
+        from tkinter import messagebox
+        import threading
+
+        mcu = self.mcu_var.get()
+        port = self.com_var.get()
+        root = Path(__file__).parent.parent.parent
+        avrdude = root / "module" / "avrdude" / "etc" / "avrdude.exe"
+        avrdude_conf = root / "module" / "avrdude" / "etc" / "avrdude.conf"
+        bootloaders = {
+            "ATmega328P": "optiboot_atmega328.hex",
+            "ATmega168PA": "optiboot_atmega168.hex"
+        }
+
+        #"ATmega168PA": "ATmegaBOOT_168_atmega168.hex"
+
+        hex_file = root / "bootloaders" / bootloaders.get(mcu, "")
+        if not hex_file.exists():
+            messagebox.showerror("Ошибка", f"Загрузчик для {mcu} не найден: {hex_file.name}")
+            return
+
+        cmd = [
+            str(avrdude),
+            "-C", str(avrdude_conf),
+            "-p", mcu.lower(),
+            "-c", "stk500v1",
+            "-P", port,
+            "-b", "19200",
+            "-D",
+            "-U", f"flash:w:{hex_file}:i"
+        ]
+
+        def run():
+            try:
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+                output = ""
+                for line in process.stdout:
+                    output += line
+                process.wait()
+                if process.returncode == 0:
+                    messagebox.showinfo("Готово", "Загрузчик успешно прошит.")
+                else:
+                    messagebox.showerror("Ошибка", f"Прошивка не удалась:\n\n{output}")
+            except Exception as e:
+                messagebox.showerror("Ошибка", str(e))
+
+        threading.Thread(target=run, daemon=True).start()
