@@ -1,5 +1,3 @@
-# uploader.py
-
 import subprocess
 import threading
 import os

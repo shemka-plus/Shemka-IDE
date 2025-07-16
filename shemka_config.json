@@ -20,5 +20,6 @@
     "uploader_type": "isp",
     "bootloader": "new",
     "font_family": "Consolas",
-    "font_size": 12
+    "font_size": 12,
+    "last_hex": "C:/Stas/shemka-plus/Shemka-IDE/v/v0.7/222.hex"
 }

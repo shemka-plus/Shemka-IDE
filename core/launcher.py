@@ -1,3 +1,5 @@
+# core/launcher.py
+
 from gui.main_window import MainWindow
 from gui.config_manager import ConfigManager
 from pathlib import Path
@@ -12,7 +14,7 @@ def run_ide():
     ctk.set_appearance_mode(config.config["theme"])
     ctk.set_default_color_theme(config.config["color_theme"])
 
-    # Путь к корню компилятора (если нужен)
+    # Путь к корню компилятора
     TOOLS_ROOT = (Path(__file__).parent.parent / "bin").resolve()
     BIN_DIR = TOOLS_ROOT / "bin"
 
@@ -20,7 +22,7 @@ def run_ide():
     avr_tools = {
         'gcc': str(BIN_DIR / "avr-gcc.exe"),
         'objcopy': str(BIN_DIR / "avr-objcopy.exe"),
-        'avrdude': "INTERNAL"  # Больше не используется (см. uploader.py)
+        'avrdude': "INTERNAL"  # больше не используется напрямую
     }
 
     boards = {
@@ -29,5 +31,6 @@ def run_ide():
         "ATmega168PA": "m168p"
     }
 
+    # Запуск главного окна
     app = MainWindow(avr_tools=avr_tools, boards=boards)
     app.mainloop()
