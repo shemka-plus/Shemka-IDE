@@ -61,23 +61,55 @@ class SettingsTab(ctk.CTkFrame):
         ctk.CTkOptionMenu(frame, values=archives or ["Нет архивов"]).grid(row=6, column=1, pady=5)
 
     def change_theme(self, choice):
-        """Объединенная функция смены темы"""
-        self.config.set_theme(choice)
-        self.config.set_color_theme("blue")  # Фиксированная цветовая схема
-        
-        # Мгновенное применение темы
+        """Изменяет тему интерфейса немедленно"""
+        self.config.set_theme(choice)  # сохраняем новое значение
+
+        # Применяем тему немедленно (не читаем заново config.config)
         ctk.set_appearance_mode(choice)
+
         from core.theme_manager import ThemeManager
-        ThemeManager().apply_theme(self.master)
+        theme_manager = ThemeManager()
+
+        # Принудительно сбрасываем кэш конфигурации в ThemeManager
+        theme_manager.config.config["theme"] = choice
+
+        # Обновляем весь интерфейс
+        theme_manager.apply_theme(self.master)
+
+        from core.theme_manager import ThemeManager
+
+        # Применим к главному окну
+        theme_manager = ThemeManager()
+        theme_manager.apply_theme(self.master)
+
+        # обновим все вкладки
+        if hasattr(self.master, "tabview"):
+            for tab in self.master.tabview._tab_dict.values():
+                theme_manager.apply_theme(tab)
 
     def change_color(self, choice):
+        """Изменяет цветовую схему немедленно"""
         try:
+            self.config.set_color_theme(choice)  # сохраняем
             ctk.set_default_color_theme(choice)
-            self.config.set_color_theme(choice)
-            # Обновим тему принудительно
-            self.after(100, lambda: ctk.set_appearance_mode(ctk.get_appearance_mode()))
+
+            from core.theme_manager import ThemeManager
+            theme_manager = ThemeManager()
+
+            # Принудительно обновляем config в ThemeManager
+            theme_manager.config.config["color_theme"] = choice
+
+            # Обновляем главное окно
+            theme_manager.apply_theme(self.master)
+
+            # Также обновим вкладки в табах
+            if hasattr(self.master, "tabview"):
+                for tab_name in self.master.tabview._tab_dict:
+                    tab_frame = self.master.tabview._tab_dict[tab_name]
+                    theme_manager.apply_theme(tab_frame)
+
         except Exception as e:
-            print(f"Ошибка смены темы: {e}")
+            print(f"Ошибка смены цветовой схемы: {e}")
 
     def apply_settings(self):
         messagebox.showinfo("Сохранено", "Настройки применены и сохранены")

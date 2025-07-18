@@ -5,6 +5,7 @@ import customtkinter as ctk
 from tkinter import scrolledtext, messagebox, Menu
 from datetime import datetime
 import time
+from core.theme_manager import ThemeManager
 
 class UARTMonitorTab(ctk.CTkFrame):
     def __init__(self, parent, avr_tools=None, boards=None, config=None, tools_root=None):
@@ -25,8 +26,9 @@ class UARTMonitorTab(ctk.CTkFrame):
         self.create_widgets()
         self.update_ports_list()
         self.setup_context_menu()
+        self.update_theme()
         
-        # Уведомление о режиме (внизу)
+        # Уведомление о режиме
         self.programmer_notice = ctk.CTkLabel(
             self, 
             text="Для работы переключите программатор в режим UART",
@@ -49,9 +51,9 @@ class UARTMonitorTab(ctk.CTkFrame):
         # Кнопка обновления портов
         self.refresh_ports_btn = ctk.CTkButton(
             settings_frame, 
-            text="Обновить", 
-            command=self.update_ports_list,
-            width=100
+            text="🔄Обновить", 
+            width=30,
+            command=self.update_ports_list
         )
         self.refresh_ports_btn.grid(row=0, column=2, padx=5, pady=2)
         
@@ -65,12 +67,14 @@ class UARTMonitorTab(ctk.CTkFrame):
         self.baudrate_menu.set("9600")
         self.baudrate_menu.grid(row=1, column=1, padx=5, pady=2, sticky="w")
         
-        # Кнопка подключения
+        # Кнопка подключения/отключения
         self.connect_btn = ctk.CTkButton(
             settings_frame, 
             text="Подключиться", 
             command=self.toggle_connection,
-            width=100
+            width=100,
+            fg_color="#2AAA8A",
+            hover_color="#1E6F5C"
         )
         self.connect_btn.grid(row=1, column=2, padx=5, pady=2)
         
@@ -121,73 +125,78 @@ class UARTMonitorTab(ctk.CTkFrame):
         send_frame = ctk.CTkFrame(self)
         send_frame.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
         
-        self.input_entry = ctk.CTkEntry(send_frame)
+        self.input_entry = ctk.CTkEntry(send_frame, placeholder_text="Введите сообщение...")
         self.input_entry.pack(side="left", padx=5, pady=2, fill="x", expand=True)
         self.input_entry.bind("<Return>", lambda e: self.send_data())
         
         self.send_btn = ctk.CTkButton(
             send_frame, 
             text="Отправить", 
-            command=self.send_data
+            command=self.send_data,
+            width=100
         )
         self.send_btn.pack(side="left", padx=5, pady=2)
     
     def setup_context_menu(self):
-        """Настройка контекстного меню для поля вывода"""
+        """Настройка контекстного меню"""
         self.context_menu = Menu(self, tearoff=0)
-        self.context_menu.add_command(label="Копировать", command=self.copy_output)
+        self.context_menu.add_command(label="Копировать", command=self.copy_text)
         self.context_menu.add_command(label="Очистить", command=self.clear_output)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Выделить всё", command=self.select_all)
         
-        # Привязываем меню к правой кнопке мыши
         self.output_text.bind("<Button-3>", self.show_context_menu)
-        
-        # Горячие клавиши
-        self.output_text.bind("<Control-c>", lambda e: self.copy_output())
-        self.output_text.bind("<Control-l>", lambda e: self.clear_output())
+        self.output_text.bind("<Control-c>", lambda e: self.copy_text())
+        self.output_text.bind("<Control-a>", lambda e: self.select_all())
     
     def show_context_menu(self, event):
-        """Показ контекстного меню"""
+        """Показать контекстное меню"""
         try:
             self.context_menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.context_menu.grab_release()
     
-    def copy_output(self):
-        """Копирование выделенного текста в буфер обмена"""
+    def copy_text(self):
+        """Копировать выделенный текст"""
         try:
             text = self.output_text.get("sel.first", "sel.last")
             self.clipboard_clear()
             self.clipboard_append(text)
         except:
-            pass  # Если ничего не выделено
+            pass
+    
+    def select_all(self):
+        """Выделить весь текст"""
+        self.output_text.tag_add("sel", "1.0", "end")
+        return "break"
     
     def clear_output(self):
-        """Очистка поля вывода"""
+        """Очистить вывод"""
         self.output_text.config(state='normal')
         self.output_text.delete("1.0", "end")
         self.output_text.config(state='disabled')
     
     def toggle_timestamp(self):
-        """Переключение отображения времени"""
+        """Переключить отображение времени"""
         self.show_timestamp = not self.show_timestamp
         self.timestamp_btn.configure(text=f"Время: {'ВКЛ' if self.show_timestamp else 'ВЫКЛ'}")
     
     def update_ports_list(self):
-        """Обновление списка COM-портов"""
+        """Обновить список портов"""
         ports = [port.device for port in serial.tools.list_ports.comports()]
         self.port_menu.configure(values=ports)
         if ports:
             self.port_menu.set(ports[0])
     
     def toggle_connection(self):
-        """Подключение/отключение от порта"""
+        """Подключиться/отключиться от порта"""
         if self.is_running:
             self.stop_monitoring()
         else:
             self.start_monitoring()
     
     def start_monitoring(self):
-        """Начало мониторинга порта"""
+        """Начать мониторинг порта"""
         port = self.port_menu.get()
         baudrate = self.baudrate_menu.get()
         
@@ -201,24 +210,24 @@ class UARTMonitorTab(ctk.CTkFrame):
             self.receive_thread = threading.Thread(target=self.receive_data, daemon=True)
             self.receive_thread.start()
             
-            self.connect_btn.configure(text="Отключиться")
+            self.connect_btn.configure(text="Отключиться", fg_color="#FF5555", hover_color="#CC0000")
             self.log_message(f"Подключено к {port} @ {baudrate} бод\n", "system")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться:\n{e}")
     
     def stop_monitoring(self):
-        """Остановка мониторинга порта"""
+        """Остановить мониторинг порта"""
         if self.serial_port and self.serial_port.is_open:
             self.is_running = False
             if self.receive_thread and self.receive_thread.is_alive():
                 self.receive_thread.join()
             self.serial_port.close()
             
-            self.connect_btn.configure(text="Подключиться")
+            self.connect_btn.configure(text="Подключиться", fg_color="#2AAA8A", hover_color="#1E6F5C")
             self.log_message("Отключено\n", "system")
     
     def receive_data(self):
-        """Получение данных с порта"""
+        """Получать данные с порта"""
         while self.is_running and self.serial_port and self.serial_port.is_open:
             try:
                 if self.serial_port.in_waiting > 0:
@@ -229,13 +238,13 @@ class UARTMonitorTab(ctk.CTkFrame):
                         self.log_message("← ", "arrow")
                         self.log_message(f"{data}\n", "incoming")
                 else:
-                    time.sleep(0.01)  # Добавляем небольшую задержку при отсутствии данных
+                    time.sleep(0.01)
             except Exception as e:
                 self.log_message(f"Ошибка чтения: {e}\n", "error")
                 break
     
     def send_data(self):
-        """Отправка данных в порт"""
+        """Отправить данные в порт"""
         if not self.is_running:
             messagebox.showwarning("Ошибка", "Порт не подключен!")
             return
@@ -255,8 +264,32 @@ class UARTMonitorTab(ctk.CTkFrame):
             self.log_message(f"Ошибка отправки: {e}\n", "error")
     
     def log_message(self, message, msg_type="system"):
-        """Логирование сообщений"""
+        """Записать сообщение в лог"""
         self.output_text.config(state='normal')
         self.output_text.insert("end", message, msg_type)
         self.output_text.see("end")
         self.output_text.config(state='disabled')
+    
+    def update_theme(self):
+        """Обновить тему интерфейса"""
+        theme_manager = ThemeManager()
+        theme_key = "dark" if theme_manager.config.config.get("theme") == "dark" else "default"
+        theme = theme_manager.editor_themes.get(theme_key)
+        
+        # Применить тему к текстовому полю
+        self.output_text.configure(
+            bg=theme["console_bg"],
+            fg=theme["console_fg"],
+            insertbackground=theme["cursor"],
+            selectbackground=theme["selection"]
+        )
+        
+        # Обновить цвет фона
+        self.configure(fg_color=theme["editor_bg"])
+        
+        # Обновить теги цветов
+        self.output_text.tag_config("incoming", foreground="#44FF44")
+        self.output_text.tag_config("outgoing", foreground="#FF4444")
+        self.output_text.tag_config("system", foreground="#66D9EF")
+        self.output_text.tag_config("error", foreground="#FF4444")
+        self.output_text.tag_config("timestamp", foreground="#75715E")

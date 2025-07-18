@@ -1,5 +1,3 @@
-# utils/editor/syntax_editor.py
-
 from utils.editor.base_editor import BaseEditor
 from utils.editor.highlighter_core import setup_syntax_tags, highlight_syntax, schedule_syntax_highlight
 
@@ -34,3 +32,37 @@ class SyntaxText(BaseEditor):
         ThemeManager().apply_editor_theme(self.master)
         self.setup_syntax_tags()
         self.highlight_syntax()
+
+    
+    def _bind_shortcuts(self):
+        # Убираем дублирующие биндинги
+        self.bind("<Control-c>", self._handle_copy)
+        self.bind("<Control-v>", self._handle_paste)
+        self.bind("<Control-x>", self._handle_cut)
+        self.bind("<Control-a>", self._handle_select_all)
+        self.bind("<Control-z>", self._handle_undo)
+        self.bind("<Control-y>", self._handle_redo)
+
+    def _handle_copy(self, event=None):
+        self.event_generate("<<Copy>>")
+        return "break"  # Предотвращаем дальнейшую обработку
+
+    def _handle_paste(self, event=None):
+        self.event_generate("<<Paste>>")
+        return "break"
+
+    def _handle_cut(self, event=None):
+        self.event_generate("<<Cut>>")
+        return "break"
+
+    def _handle_select_all(self, event=None):
+        self.event_generate("<<SelectAll>>")
+        return "break"
+
+    def _handle_undo(self, event=None):
+        self.event_generate("<<Undo>>")
+        return "break"
+
+    def _handle_redo(self, event=None):
+        self.event_generate("<<Redo>>")
+        return "break"

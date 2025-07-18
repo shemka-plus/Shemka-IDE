@@ -1,8 +1,6 @@
-# gui/main_window.py
-
 import customtkinter as ctk
 from utils.editor.editor_tab import EditorTab
-from utils.uart_monitor import UARTMonitorTab
+from utils.uart_monitor.uart_monitor_tab import UARTMonitorTab
 from utils.collector_tab import CollectorTab
 from .settings import SettingsTab
 from .config_manager import ConfigManager
@@ -10,9 +8,6 @@ from utils.info_tab import InfoTab
 from pathlib import Path
 from core.theme_manager import ThemeManager
 from utils.hex_tools.hex_tab_ui import HexTabUI
-
-from utils.hex_tools.hex_tab import HexTab
-
 
 class MainWindow(ctk.CTk):
     def __init__(self, avr_tools, boards):
@@ -45,7 +40,7 @@ class MainWindow(ctk.CTk):
         tabs = {
             "Редактор": EditorTab,
             "UART монитор": UARTMonitorTab,
-            "HEX инструменты": HexTabUI,  # обновлённая ссылка
+            "HEX инструменты": HexTabUI,
             "Собиратель": CollectorTab,
             "Инфо": InfoTab,
             "Настройки": SettingsTab
@@ -63,17 +58,6 @@ class MainWindow(ctk.CTk):
                     boards=self.boards,
                     config=self.config,
                 )
-
-
-            #if tab_class is HexTab:
-            #    tab_instance = tab_class(console_callback=self.log_to_console)
-            #else:
-            #    tab_instance = tab_class(
-            #        tab,
-            #        avr_tools=self.avr_tools,
-            #        boards=self.boards,
-            #        config=self.config,
-            #    )
 
             self.theme_manager.apply_theme(tab_instance)
             tab_instance.pack(fill="both", expand=True)

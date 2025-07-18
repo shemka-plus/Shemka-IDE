@@ -1,7 +1,6 @@
 import customtkinter as ctk
 from tkinter import StringVar, Menu, Frame, filedialog, font as tkfont
 from pathlib import Path
-#import re
 import serial.tools.list_ports
 from avr.compiler import AVRCompiler
 from avr.uploader import AVRUploader
@@ -94,30 +93,72 @@ class EditorTab(ctk.CTkFrame):
         upload_btn.pack(side="right", padx=5)
         CTkTooltip(upload_btn, "Загрузить прошивку в микроконтроллер")
 
-        # Область редактора
+        from customtkinter import CTkScrollbar
+        import tkinter as tk
+
+        # Контейнер редактора
         editor_container = Frame(self)
         editor_container.pack(fill="both", expand=True, padx=5, pady=0)
 
+        # Левый блок — нумерация строк
         self.line_numbers = LineNumbers(editor_container, width=4)
         self.line_numbers.pack(side="left", fill="y")
 
-        self.editor = SyntaxText(editor_container, wrap="none",
-                         font=(self.font_family.get(), self.font_size.get()),
-                         undo=True, autoseparators=True, maxundo=-1)
+        # Контейнер для текста и прокруток
+        text_frame = ctk.CTkFrame(editor_container)
+        text_frame.pack(side="left", fill="both", expand=True)
 
+        # Создаем текстовый редактор
+        self.editor = SyntaxText(text_frame, wrap="none",
+                    font=(self.font_family.get(), self.font_size.get()),
+                    undo=True, autoseparators=True, maxundo=-1)
 
-        self.editor.pack(side="left", fill="both", expand=True)
+        self.editor.grid(row=0, column=0, sticky="nsew")
 
+        # Горизонтальная прокрутка
+        x_scrollbar = CTkScrollbar(text_frame, orientation="horizontal", command=self.editor.xview)
+        x_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        # Вертикальная прокрутка
+        y_scrollbar = CTkScrollbar(text_frame, orientation="vertical", command=self.editor.yview)
+        y_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Привязка прокрутки
+        self.editor.configure(yscrollcommand=y_scrollbar.set, xscrollcommand=x_scrollbar.set)
+
+        # Настройка сетки
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
+
+        # Подключение номеров строк
         self.line_numbers.text_widget = self.editor
         self.line_numbers.bind_to_widget()
         self.line_numbers.update_line_numbers()
 
-        # Консоль вывода
-        self.console = SyntaxText(self, height=10,
-                          font=(self.font_family.get(), self.font_size.get()))
 
+        # Контейнер консоли
+        console_frame = ctk.CTkFrame(self)
+        console_frame.pack(fill="both", padx=5, pady=5)
+
+        # Консоль
+        self.console = SyntaxText(console_frame, height=10,
+                        font=(self.font_family.get(), self.font_size.get()),
+                        wrap="none")
+
+        self.console.grid(row=0, column=0, sticky="nsew")
+
+        # Вертикальная прокрутка
+        console_yscroll = CTkScrollbar(console_frame, orientation="vertical", command=self.console.yview)
+        console_yscroll.grid(row=0, column=1, sticky="ns")
+
+        self.console.configure(yscrollcommand=console_yscroll.set)
+
+        # Настройка сетки
+        console_frame.grid_rowconfigure(0, weight=1)
+        console_frame.grid_columnconfigure(0, weight=1)
+
+        # Блокируем редактирование
         self.console.configure(state="disabled")
-        self.console.pack(fill="x", padx=5, pady=5)
 
     def open_settings_window(self):
         if hasattr(self, '_settings_window') and self._settings_window.winfo_exists():
@@ -137,7 +178,6 @@ class EditorTab(ctk.CTkFrame):
 
         self.wait_window(self._settings_window)
         self._apply_font_settings()
-
         
     def _apply_font_settings(self):
         """Применяет настройки шрифта"""
@@ -258,6 +298,9 @@ class EditorTab(ctk.CTkFrame):
             self.current_file = path
             self.config.add_recent_file(path)
             self.log(f"Открыт файл: {path}")
+            
+            # Добавляем подсветку после загрузки файла
+            self.editor.after(100, lambda: self.editor.highlight_syntax())
         except Exception as e:
             self.log(f"Ошибка открытия файла: {e}")
 
@@ -322,7 +365,6 @@ class EditorTab(ctk.CTkFrame):
         def callback(success, message):
             self.upload_callback(success, message)
 
-        #self.uploader.upload(str(hex_path), mcu=mcu, port=port, callback=callback)
         self.uploader.upload(
             hex_path=str(hex_path),
             mcu=mcu,
@@ -342,7 +384,30 @@ class EditorTab(ctk.CTkFrame):
                 self.editor.see(pos)
 
     def update_theme(self):
-        """Обновляет тему редактора"""
         from core.theme_manager import ThemeManager
         theme_manager = ThemeManager()
-        theme_manager.apply_editor_theme(self)
+        theme_key = "dark" if theme_manager.config.config.get("theme") == "dark" else "default"
+        theme = theme_manager.editor_themes.get(theme_key)
+
+        # Применяем тему ко всем элементам
+        if hasattr(self, "editor"):
+            self.editor.configure(
+                bg=theme["editor_bg"],
+                fg=theme["editor_fg"],
+                insertbackground=theme["cursor"],
+                selectbackground=theme["selection"]
+            )
+        
+        if hasattr(self, "console"):
+            self.console.configure(
+                bg=theme["console_bg"],
+                fg=theme["console_fg"],
+                insertbackground=theme["cursor"],
+                selectbackground=theme["selection"]
+            )
+        
+        if hasattr(self, "line_numbers"):
+            self.line_numbers.configure(
+                bg=theme["gutter_bg"],
+                fg=theme["gutter_fg"]
+            )

@@ -1,7 +1,5 @@
-# utils/hex_tools/hex_tab_ui.py
-
 import customtkinter as ctk
-from tkinter import filedialog, StringVar
+from tkinter import filedialog, StringVar, Menu, messagebox
 from utils.hex_tools.hex_tab import HexTab
 from utils.hex_tools.eeprom_tab import EepromTab
 from utils.hex_tools.fuses_tab import FusesTab
@@ -10,61 +8,15 @@ import os
 from gui.config_manager import ConfigManager
 import serial.tools.list_ports
 from pathlib import Path
-
-
-# Простой Tooltip для customtkinter
+import threading
 import tkinter as tk
-
-class ToolTip:
-    def __init__(self, widget, text="Подсказка", delay=500):
-        self.widget = widget
-        self.text = text
-        self.tipwindow = None
-        self.id = None
-        self.delay = delay
-        self._add_events()
-
-    def _add_events(self):
-        self.widget.bind("<Enter>", self._schedule)
-        self.widget.bind("<Leave>", self._unschedule)
-
-    def _schedule(self, event=None):
-        self._unschedule()
-        self.id = self.widget.after(self.delay, self._show_tooltip)
-
-    def _unschedule(self, event=None):
-        if self.id:
-            self.widget.after_cancel(self.id)
-            self.id = None
-        self._hide_tooltip()
-
-    def _show_tooltip(self):
-        if self.tipwindow or not self.text:
-            return
-        x, y, _, cy = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 30
-        y += self.widget.winfo_rooty() + cy + 10
-        self.tipwindow = tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(
-            tw, text=self.text, justify="left",
-            background="#ffffe0", relief="solid", borderwidth=1,
-            font=("tahoma", "9", "normal")
-        )
-        label.pack(ipadx=5, ipady=2)
-
-    def _hide_tooltip(self):
-        if self.tipwindow:
-            self.tipwindow.destroy()
-            self.tipwindow = None
-
-
+from utils.ui.tooltip import CTkTooltip
 
 class HexTabUI(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.config_manager = ConfigManager()
+        self.operation_in_progress = False
 
         # Настройки
         self.mcu = StringVar(value=self.config_manager.config.get("mcu", "ATmega328P"))
@@ -83,6 +35,61 @@ class HexTabUI(ctk.CTkFrame):
         self.clone = CloneTab(console_callback=self.log)
 
         self.create_widgets()
+        self.setup_context_menu()
+
+    def setup_context_menu(self):
+        """Контекстное меню для HEX Viewer"""
+        self.viewer_menu = Menu(self, tearoff=0)
+        self.viewer_menu.add_command(label="Копировать", command=self.copy_hex_viewer)
+        self.viewer_menu.add_command(label="Выделить всё", command=self.select_all_hex_viewer)
+        self.viewer.bind("<Button-3>", self.show_viewer_menu)
+
+    def show_viewer_menu(self, event):
+        try:
+            self.viewer_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.viewer_menu.grab_release()
+
+    def run_with_progress(self, operation, title):
+        """Запуск операции с индикатором прогресса"""
+        if self.operation_in_progress:
+            return
+            
+        self.operation_in_progress = True
+        
+        # Создаем окно прогресса
+        self.progress_window = ctk.CTkToplevel(self)
+        self.progress_window.title(title)
+        self.progress_window.geometry("300x100")
+        self.progress_window.transient(self)
+        self.progress_window.grab_set()
+        
+        # Центрируем окно
+        self.center_window(self.progress_window)
+        
+        ctk.CTkLabel(self.progress_window, text=f"{title}...").pack(pady=10)
+        self.progress_bar = ctk.CTkProgressBar(self.progress_window)
+        self.progress_bar.pack(pady=5, padx=20, fill="x")
+        self.progress_bar.set(0)
+        self.progress_window.update()
+        
+        # Запускаем операцию в отдельном потоке
+        def thread_operation():
+            try:
+                operation()
+            finally:
+                self.after(100, self.close_progress)
+        
+        threading.Thread(target=thread_operation, daemon=True).start()
+
+    def center_window(self, window):
+        """Центрирует окно относительно главного окна"""
+        window.update_idletasks()
+        width = window.winfo_width()
+        height = window.winfo_height()
+        x = (window.winfo_screenwidth() // 2) - (width // 2)
+        y = (window.winfo_screenheight() // 2) - (height // 2)
+        window.geometry(f'+{x}+{y}')
 
     def create_widgets(self):
         # Верхняя панель
@@ -105,30 +112,103 @@ class HexTabUI(ctk.CTkFrame):
 
         # Панель вкладок
         tabs = ctk.CTkTabview(self)
-        tabs.pack(expand=True, fill="both", padx=10, pady=10)
+        tabs.pack(fill="x", padx=10, pady=10)
 
         self.create_hex_tab(tabs.add("HEX"))
         self.create_eeprom_tab(tabs.add("EEPROM"))
         self.create_fuses_tab(tabs.add("Фьюзы"))
         self.create_clone_tab(tabs.add("Клон"))
 
-        # HEX Viewer
-        self.viewer = ctk.CTkTextbox(self, height=200)
-        self.viewer.pack(fill="both", padx=10, pady=(0, 5))
-        self.viewer.configure(state="disabled", font=("Courier New", 11))
+        # Контейнер для HEX Viewer и консоли
+        viewer_console_frame = ctk.CTkFrame(self)
+        viewer_console_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Консоль
-        self.console = ctk.CTkTextbox(self, height=120)
-        self.console.pack(fill="x", padx=10, pady=(0, 10))
+        # HEX Viewer с прокруткой
+
+        self.viewer_frame = ctk.CTkFrame(viewer_console_frame)
+        self.viewer_frame.pack(fill="both", expand=True, pady=(0, 5))
+
+        # Используем CTkTextbox вместо tk.Text для сохранения темы
+        self.viewer = ctk.CTkTextbox(
+            self.viewer_frame, 
+            wrap="none", 
+            font=("Courier New", 11),
+            state="disabled"
+        )
+        self.viewer.pack(side="left", fill="both", expand=True)
+
+        # Оставим одну полосу прокрутки CTk
+        self.viewer_scroll = ctk.CTkScrollbar(
+            self.viewer_frame, 
+            orientation="vertical", 
+            command=self.viewer.yview
+        )
+        self.viewer_scroll.pack(side="right", fill="y")
+        self.viewer.configure(yscrollcommand=self.viewer_scroll.set)
+
+        # Консоль сделаем ниже viewer с фиксированной высотой
+        self.console_frame = ctk.CTkFrame(viewer_console_frame)
+        self.console_frame.pack(fill="x", pady=(5, 0))
+        self.console = ctk.CTkTextbox(self.console_frame, height=120)
+        self.console.pack(fill="x")
         self.console.configure(state="disabled")
 
-    #def create_hex_tab(self, tab):
-    #    ctk.CTkButton(tab, text="Открыть HEX", command=self.open_hex).pack(pady=2)
-    #    ctk.CTkButton(tab, text="Сохранить HEX", command=self.save_hex).pack(pady=2)
-    #    ctk.CTkButton(tab, text="Прошить", command=self.flash_hex).pack(pady=2)
-    #    ctk.CTkButton(tab, text="Считать", command=self.read_hex).pack(pady=2)
-    #    ctk.CTkButton(tab, text="Верифицировать", command=self.verify_hex).pack(pady=2)
-    #    ctk.CTkButton(tab, text="Очистить чип", command=self.erase_chip).pack(pady=2)
+    def show_eeprom_file(self, path):
+        if not os.path.exists(path):
+            self.log(True, f"[Ошибка] EEPROM-файл не найден: {path}")
+            return
+
+        try:
+            with open(path, "r") as f:
+                lines = f.readlines()
+
+            self.viewer.configure(state="normal")
+            self.viewer.delete("1.0", "end")
+
+            address = 0
+            for line in lines:
+                if not line.startswith(":"):
+                    continue
+                byte_count = int(line[1:3], 16)
+                data = line[9:9 + byte_count * 2]
+                if not data:
+                    continue
+                formatted = " ".join(data[i:i + 2] for i in range(0, len(data), 2))
+                self.viewer.insert("end", f"{address:04X}: {formatted}\n")
+                address += byte_count
+
+            self.viewer.configure(state="disabled")
+            self.log(False, f"[EEPROM] Загружено {len(lines)} строк из {os.path.basename(path)}")
+        except Exception as e:
+            self.log(True, f"[Ошибка при отображении EEPROM] {e}")   
+
+    def setup_context_menu(self):
+        """Контекстное меню для HEX Viewer"""
+        self.viewer_menu = Menu(self, tearoff=0)
+        self.viewer_menu.add_command(label="Копировать", command=self.copy_hex_viewer)
+        self.viewer_menu.add_command(label="Выделить всё", command=self.select_all_hex_viewer)
+        self.viewer.bind("<Button-3>", self.show_viewer_menu)
+
+    def show_viewer_menu(self, event):
+        try:
+            self.viewer_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.viewer_menu.grab_release()
+
+    def copy_hex_viewer(self):
+        try:
+            text = self.viewer.get("sel.first", "sel.last")
+            self.clipboard_clear()
+            self.clipboard_append(text)
+        except:
+            pass
+
+    def select_all_hex_viewer(self):
+        self.viewer.configure(state="normal")
+        self.viewer.tag_add("sel", "1.0", "end")
+        self.viewer.configure(state="disabled")
+        return "break"
+
     def create_hex_tab(self, tab):
         btn_frame = ctk.CTkFrame(tab)
         btn_frame.pack(pady=5, fill="x")
@@ -136,42 +216,116 @@ class HexTabUI(ctk.CTkFrame):
         buttons = [
             ("📂", "Открыть HEX", self.open_hex),
             ("💾", "Сохранить HEX", self.save_hex),
-            ("🧩", "Прошить", self.flash_hex),
-            ("📥", "Считать", self.read_hex),
-            ("📏", "Верифицировать", self.verify_hex),
-            ("❌", "Очистить чип", self.erase_chip),
+            ("🧩", "Прошить", lambda: self.run_with_progress(self.flash_hex, "Прошивка HEX")),
+            ("📥", "Считать", lambda: self.run_with_progress(self.read_hex, "Чтение HEX")),
+            ("📏", "Верифицировать", lambda: self.run_with_progress(self.verify_hex, "Верификация HEX")),
+            ("❌", "Очистить чип", lambda: self.run_with_progress(self.erase_chip, "Очистка чипа")),
         ]
 
         for icon, tooltip, cmd in buttons:
             btn = ctk.CTkButton(btn_frame, text=icon, width=36, height=36, command=cmd)
             btn.pack(side="left", padx=6)
-            ToolTip(btn, text=tooltip)
+            CTkTooltip(btn, text=tooltip)
+
+    def close_progress(self):
+        """Закрыть окно прогресса"""
+        if hasattr(self, 'progress_window'):
+            self.progress_window.destroy()
+            del self.progress_window
+        self.operation_in_progress = False
+
 
 
     def create_eeprom_tab(self, tab):
-        ctk.CTkButton(tab, text="Чтение EEPROM", command=self.read_eeprom).pack(pady=10)
-        ctk.CTkButton(tab, text="Запись EEPROM", command=self.write_eeprom).pack(pady=10)
+        ctk.CTkButton(tab, text="Чтение EEPROM", command=self.read_eeprom).grid(row=3, column=0, pady=10)
+        ctk.CTkButton(tab, text="Запись EEPROM", command=self.write_eeprom).grid(row=3, column=1, pady=10)
 
     def create_fuses_tab(self, tab):
         self.fuse_l = StringVar()
         self.fuse_h = StringVar()
         self.fuse_e = StringVar()
-        for i, (label, var) in enumerate([("LFuse", self.fuse_l), ("HFuse", self.fuse_h), ("EFuse", self.fuse_e)]):
-            ctk.CTkLabel(tab, text=label).grid(row=i, column=0, padx=5, pady=2, sticky="e")
-            ctk.CTkEntry(tab, textvariable=var, width=100).grid(row=i, column=1, pady=2)
-        ctk.CTkButton(tab, text="Чтение", command=self.read_fuses).grid(row=3, column=0, pady=10)
-        ctk.CTkButton(tab, text="Запись", command=self.write_fuses).grid(row=3, column=1, pady=10)
+        
+        # Горизонтальный фрейм для фьюзов
+        fuses_frame = ctk.CTkFrame(tab)
+        fuses_frame.pack(fill="x", pady=5, padx=5)
+        
+        # LFuse
+        fuse_l_frame = ctk.CTkFrame(fuses_frame)
+        fuse_l_frame.pack(side="left", padx=5)
+        ctk.CTkLabel(fuse_l_frame, text="LFuse:").pack()
+        ctk.CTkEntry(fuse_l_frame, textvariable=self.fuse_l, width=70).pack()
+        
+        # HFuse
+        fuse_h_frame = ctk.CTkFrame(fuses_frame)
+        fuse_h_frame.pack(side="left", padx=5)
+        ctk.CTkLabel(fuse_h_frame, text="HFuse:").pack()
+        ctk.CTkEntry(fuse_h_frame, textvariable=self.fuse_h, width=70).pack()
+        
+        # EFuse
+        fuse_e_frame = ctk.CTkFrame(fuses_frame)
+        fuse_e_frame.pack(side="left", padx=5)
+        ctk.CTkLabel(fuse_e_frame, text="EFuse:").pack()
+        ctk.CTkEntry(fuse_e_frame, textvariable=self.fuse_e, width=70).pack()
+        
+        # Горизонтальный фрейм для кнопок
+        btn_frame = ctk.CTkFrame(tab)
+        btn_frame.pack(fill="x", pady=5, padx=5)
+        
+        ctk.CTkButton(btn_frame, text="Чтение", command=self.read_fuses).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Запись", command=self.write_fuses).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Сохранить", command=self.save_fuses).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Загрузить", command=self.load_fuses).pack(side="left", padx=5)
+
+    def save_fuses(self):
+        path = filedialog.asksaveasfilename(defaultextension=".fuses", filetypes=[("Файлы фьюзов", "*.fuses")])
+        if path:
+            with open(path, "w") as f:
+                f.write(f"LFuse: {self.fuse_l.get()}\n")
+                f.write(f"HFuse: {self.fuse_h.get()}\n")
+                f.write(f"EFuse: {self.fuse_e.get()}\n")
+            self.log(False, f"[Фьюзы] Сохранены в {path}")
+
+    def load_fuses(self):
+        path = filedialog.askopenfilename(filetypes=[("Файлы фьюзов", "*.fuses")])
+        if path:
+            try:
+                with open(path, "r") as f:
+                    for line in f:
+                        if line.startswith("LFuse:"):
+                            self.fuse_l.set(line.split(":")[1].strip())
+                        elif line.startswith("HFuse:"):
+                            self.fuse_h.set(line.split(":")[1].strip())
+                        elif line.startswith("EFuse:"):
+                            self.fuse_e.set(line.split(":")[1].strip())
+                self.log(False, f"[Фьюзы] Загружены из {path}")
+            except Exception as e:
+                self.log(True, f"[Ошибка загрузки фьюзов] {e}")
+
 
     def create_clone_tab(self, tab):
-        ctk.CTkLabel(tab, text="Имя проекта:").pack(pady=(10, 2))
-        ctk.CTkEntry(tab, textvariable=self.project_name).pack(pady=2)
+        # Горизонтальный фрейм для полей ввода
+        input_frame = ctk.CTkFrame(tab)
+        input_frame.pack(fill="x", pady=(10, 5), padx=5)
+        
+        # Поле имени проекта
+        ctk.CTkLabel(input_frame, text="Имя проекта:").pack(side="left", padx=(0, 5))
+        ctk.CTkEntry(input_frame, textvariable=self.project_name).pack(side="left", fill="x", expand=True, padx=(0, 10))
+        
+        # Поле выбора сохраненного проекта
+        ctk.CTkLabel(input_frame, text="Сохранённые:").pack(side="left", padx=(0, 5))
+        self.project_list = ctk.CTkOptionMenu(
+            input_frame, 
+            variable=self.saved_project, 
+            values=self.get_saved_projects()
+        )
+        self.project_list.pack(side="left", fill="x", expand=True)
 
-        ctk.CTkLabel(tab, text="Сохранённые проекты:").pack(pady=(10, 2))
-        self.project_list = ctk.CTkOptionMenu(tab, variable=self.saved_project, values=self.get_saved_projects())
-        self.project_list.pack(pady=2)
-
-        ctk.CTkButton(tab, text="Клонировать чип", command=self.clone_chip).pack(pady=10)
-        ctk.CTkButton(tab, text="Восстановить чип", command=self.restore_chip).pack(pady=2)
+        # Горизонтальный фрейм для кнопок
+        btn_frame = ctk.CTkFrame(tab)
+        btn_frame.pack(fill="x", pady=(0, 10), padx=5)
+        
+        ctk.CTkButton(btn_frame, text="Клонировать чип", command=self.clone_chip).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="Восстановить чип", command=self.restore_chip).pack(side="left", padx=5)
 
     def get_ports(self):
         return [port.device for port in serial.tools.list_ports.comports()] or ["COM1"]
@@ -225,7 +379,6 @@ class HexTabUI(ctk.CTkFrame):
         except Exception as e:
             self.log(True, f"[Ошибка при отображении HEX] {e}")
 
-
     def save_hex(self):
         path = filedialog.asksaveasfilename(defaultextension=".hex")
         if path:
@@ -236,17 +389,47 @@ class HexTabUI(ctk.CTkFrame):
         self.log(False, "[Прошивка HEX]...")
         self.hex.flash_hex(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), self.hex_path.get())
 
-    #def read_hex(self):
-    #    path = self.hex_path.get() or "read_flash.hex"
-    #    self.hex.read_hex(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), path)
-#
-    #def verify_hex(self):
-    #    self.hex.verify_hex(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), self.hex_path.get())
     def read_hex(self):
+        """Чтение HEX с индикатором прогресса"""
         path = self.hex_path.get() or "read_flash.hex"
-        self.log(False, "[Чтение HEX]...")
         self.hex.read_hex(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), path)
         self.show_hex_file(path)
+
+    def show_hex_file(self, path):
+        """Показать содержимое HEX файла с прогрессом"""
+        if not os.path.exists(path):
+            self.log(True, f"[Ошибка] HEX-файл не найден: {path}")
+            return
+
+        try:
+            with open(path, "r") as f:
+                lines = f.readlines()
+
+            self.viewer.configure(state="normal")
+            self.viewer.delete("1.0", "end")
+
+            total_lines = len(lines)
+            for i, line in enumerate(lines):
+                if not line.startswith(":"):
+                    continue
+                    
+                byte_count = int(line[1:3], 16)
+                data = line[9:9 + byte_count * 2]
+                if not data:
+                    continue
+                    
+                formatted = " ".join(data[i:i + 2] for i in range(0, len(data), 2))
+                self.viewer.insert("end", f"{i:04X}: {formatted}\n")
+                
+                # Обновляем прогресс каждые 100 строк
+                if i % 100 == 0 and hasattr(self, 'progress_window'):
+                    self.progress_bar.set(i / total_lines)
+                    self.progress_window.update()
+
+            self.viewer.configure(state="disabled")
+            self.log(False, f"[HEX] Загружено {len(lines)} строк из {os.path.basename(path)}")
+        except Exception as e:
+            self.log(True, f"[Ошибка при отображении HEX] {e}")
 
     def verify_hex(self):
         self.log(False, "[Верификация HEX]...")
@@ -265,6 +448,7 @@ class HexTabUI(ctk.CTkFrame):
     def read_eeprom(self):
         path = self.hex_path.get().replace(".hex", "_eeprom.hex") or "read_eeprom.hex"
         self.eeprom.read_eeprom(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), path)
+        self.show_eeprom_file(path)
 
     def write_eeprom(self):
         self.eeprom.write_eeprom(self.mcu.get(), self.port.get(), self.baud.get(), self.programmer.get(), self.hex_path.get())
@@ -296,3 +480,24 @@ class HexTabUI(ctk.CTkFrame):
         self.console.insert("end", prefix + message + "\n")
         self.console.see("end")
         self.console.configure(state="disabled")
+
+    def update_theme(self):
+        """Обновление темы для всех элементов"""
+        from core.theme_manager import ThemeManager
+        theme_manager = ThemeManager()
+        theme_key = "dark" if theme_manager.config.config.get("theme") == "dark" else "default"
+        theme = theme_manager.editor_themes.get(theme_key)
+        
+        # Применяем тему к viewer
+        self.viewer.configure(
+            fg_color=theme["editor_bg"],
+            text_color=theme["editor_fg"],
+            scrollbar_button_color=theme["selection"],
+            scrollbar_button_hover_color=theme["cursor"]
+        )
+        
+        # Применяем тему к консоли
+        self.console.configure(
+            fg_color=theme["console_bg"],
+            text_color=theme["console_fg"]
+        )

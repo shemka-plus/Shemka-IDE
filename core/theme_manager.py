@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 from gui.config_manager import ConfigManager
 
+import tkinter as tk
+import customtkinter as ctk
+
 class ThemeManager:
     _instance = None
     
@@ -55,20 +58,23 @@ class ThemeManager:
                 print(f"Error loading theme {theme_file}: {e}")
     
     def apply_theme(self, widget):
-        """Применяет текущую тему к интерфейсу"""
         try:
-            # Применяем основную тему
             ctk.set_appearance_mode(self.config.config["theme"])
             ctk.set_default_color_theme(self.config.config["color_theme"])
-            
-            # Применяем тему редактора
+
             self.apply_editor_theme(widget)
-            
-            if hasattr(widget, 'update_theme'):
+
+            # 💡 Новый блок: вызываем update_theme(), если он есть
+            if hasattr(widget, "update_theme"):
                 widget.update_theme()
+
+            # ✅ Также применим тему рекурсивно ко всем подвиджетам
+            for child in widget.winfo_children():
+                self.apply_theme(child)
+
         except Exception as e:
-            print(f"Error applying theme: {e}")
-    
+            print(f"[ThemeManager] Error applying theme: {e}")
+
     def apply_editor_theme(self, widget, theme_name=None):
         """Применяет тему к редактору кода"""
         if not hasattr(widget, 'editor'):

@@ -21,35 +21,22 @@ class BaseEditor(tk.Text):
             self.menu.grab_release()
 
     def _bind_shortcuts(self):
-        self.bind("<Control-c>", lambda e: self.event_generate("<<Copy>>"))
-        self.bind("<Control-v>", lambda e: self.event_generate("<<Paste>>"))
-        self.bind("<Control-x>", lambda e: self.event_generate("<<Cut>>"))
-        self.bind("<Control-a>", lambda e: self.event_generate("<<SelectAll>>"))
-        self.bind("<Control-z>", lambda e: self.event_generate("<<Undo>>"))
-        self.bind("<Control-y>", lambda e: self.event_generate("<<Redo>>"))
+        # Оставляем только основные биндинги
         self.bind("<Key>", self._handle_shortcuts_by_keycode)
 
     def _handle_shortcuts_by_keycode(self, event):
-        keycode = event.keycode
+        # Обрабатываем только специальные комбинации
         if event.state & 0x4:  # Ctrl
-            if keycode == 67:  # C
-                self.event_generate("<<Copy>>")
-                return "break"
-            elif keycode == 86:  # V
-                self.event_generate("<<Paste>>")
-                return "break"
-            elif keycode == 88:  # X
-                self.event_generate("<<Cut>>")
-                return "break"
-            elif keycode == 65:  # A
-                self.event_generate("<<SelectAll>>")
-                return "break"
-            elif keycode == 90:  # Z
-                self.event_generate("<<Undo>>")
-                return "break"
-            elif keycode == 89:  # Y
-                self.event_generate("<<Redo>>")
-                return "break"
-        # Не Ctrl — не мешаем вводу
+            if event.keycode == 67:  # C
+                return self._handle_copy()
+            elif event.keycode == 86:  # V
+                return self._handle_paste()
+            elif event.keycode == 88:  # X
+                return self._handle_cut()
+            elif event.keycode == 65:  # A
+                return self._handle_select_all()
+            elif event.keycode == 90:  # Z
+                return self._handle_undo()
+            elif event.keycode == 89:  # Y
+                return self._handle_redo()
         return None
-
