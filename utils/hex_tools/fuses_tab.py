@@ -1,5 +1,3 @@
-# utils/hex_tools/fuses_tab.py
-
 from .base_tab import BaseTab
 
 class FusesTab(BaseTab):

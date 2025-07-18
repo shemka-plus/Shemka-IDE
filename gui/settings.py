@@ -12,11 +12,9 @@ class SettingsTab(ctk.CTkFrame):
         self.setup_ui()
 
     def setup_ui(self):
-        # Main frame
         frame = ctk.CTkFrame(self)
         frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Interface settings
         ctk.CTkLabel(frame, text="Настройки интерфейса", font=("", 16)).grid(row=0, column=0, pady=10, sticky="w", columnspan=2)
 
         ctk.CTkLabel(frame, text="Тема интерфейса:").grid(row=1, column=0, sticky="w")

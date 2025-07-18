@@ -1,5 +1,3 @@
-# utils/hex_tools/hex_tab.py
-
 from .base_tab import BaseTab
 
 class HexTab(BaseTab):

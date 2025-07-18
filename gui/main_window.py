@@ -21,7 +21,8 @@ class MainWindow(ctk.CTk):
         self.theme_manager.apply_theme(self)
 
         # Иконка и заголовок
-        icon_path = Path(__file__).parent.parent / "data" / "Schemka-ico.ico"
+        from core.paths import BASE_PATH
+        icon_path = BASE_PATH / "data" / "Schemka-ico.ico"
         if icon_path.exists():
             self.iconbitmap(default=str(icon_path))
 

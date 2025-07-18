@@ -6,7 +6,8 @@ import re
 class AVRCompiler:
     def __init__(self, avr_tools, tools_root=None):
         self.avr_tools = avr_tools
-        self.tools_root = Path(tools_root) if tools_root else Path(__file__).parent.parent / "bin"
+        from core.paths import BASE_PATH
+        self.tools_root = Path(tools_root) if tools_root else BASE_PATH / "bin"
         self.tools_root = self.tools_root.resolve()
 
         self.bin_dir = self.tools_root / "bin"
@@ -70,7 +71,7 @@ class AVRCompiler:
                 if file.suffix == ".cpp":
                     cmd.insert(2, "-std=gnu++11")
 
-                result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+                result = subprocess.run(cmd, capture_output=True, text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
 
                 if result.returncode != 0:
                     msg = f"Ошибка компиляции {file.name}:\n{result.stderr}"
@@ -86,7 +87,7 @@ class AVRCompiler:
             ] + [str(f) for f in object_files]
 
             print(f"[Линковка] {' '.join(link_cmd)}")
-            result = subprocess.run(link_cmd, capture_output=True, text=True, env=env)
+            result = subprocess.run(link_cmd, capture_output=True, text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
             if result.returncode != 0:
                 msg = f"Ошибка линковки:\n{result.stderr}"
                 if callback:
@@ -101,7 +102,7 @@ class AVRCompiler:
                 str(hex_path)
             ]
             print(f"[HEX] {' '.join(cmd_objcopy)}")
-            result = subprocess.run(cmd_objcopy, capture_output=True, text=True, env=env)
+            result = subprocess.run(cmd_objcopy, capture_output=True, text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
             if result.returncode != 0:
                 msg = f"Ошибка при objcopy:\n{result.stderr}"
                 if callback:

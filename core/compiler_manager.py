@@ -1,11 +1,11 @@
 from pathlib import Path
 import zipfile
 import shutil
-#import os
 
 class CompilerManager:
     def __init__(self):
-        self.root = Path(__file__).parent.parent
+        from core.paths import BASE_PATH
+        self.root = BASE_PATH
         self.bin_path = self.root / "bin"
         self.zips_dir = self.root / "module_update"
         self.required_exe = self.bin_path / "bin" / "avr-gcc.exe"

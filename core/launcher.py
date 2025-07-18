@@ -15,7 +15,8 @@ def run_ide():
     ctk.set_default_color_theme(config.config["color_theme"])
 
     # Путь к корню компилятора
-    TOOLS_ROOT = (Path(__file__).parent.parent / "bin").resolve()
+    from core.paths import BASE_PATH
+    TOOLS_ROOT = (BASE_PATH / "bin").resolve()
     BIN_DIR = TOOLS_ROOT / "bin"
 
     # Подготовка путей к компилятору

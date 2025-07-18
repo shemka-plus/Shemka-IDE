@@ -24,7 +24,8 @@ class ThemeManager:
         self.load_editor_themes()
     
     def load_editor_themes(self):
-        themes_dir = Path(__file__).parent.parent / "data" / "editor_themes"
+        from core.paths import BASE_PATH
+        themes_dir = BASE_PATH / "data" / "editor_themes"
         self.editor_themes = {
             "default": {
                 "editor_bg": "#FFFFFF",

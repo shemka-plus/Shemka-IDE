@@ -37,7 +37,7 @@ class BaseTab:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True
+                text=True, creationflags=subprocess.CREATE_NO_WINDOW
             )
             for line in process.stdout:
                 self.log(line.strip())

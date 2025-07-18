@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import filedialog, StringVar, Menu, messagebox
+from tkinter import filedialog, StringVar, Menu
 from utils.hex_tools.hex_tab import HexTab
 from utils.hex_tools.eeprom_tab import EepromTab
 from utils.hex_tools.fuses_tab import FusesTab

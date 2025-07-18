@@ -8,7 +8,8 @@ from gui.config_manager import ConfigManager
 
 class AVRUploader:
     def __init__(self, tools_root=None):
-        avrdude_dir = Path(__file__).parent.parent / "module" / "avrdude" / "etc"
+        from core.paths import BASE_PATH
+        avrdude_dir = BASE_PATH / "module" / "avrdude" / "etc"
         self.avr_tools = {
             "avrdude": avrdude_dir / "avrdude.exe"
         }
@@ -93,7 +94,7 @@ class AVRUploader:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
-                    env=env
+                    env=env, creationflags=subprocess.CREATE_NO_WINDOW
                 )
 
                 for line in process.stdout:

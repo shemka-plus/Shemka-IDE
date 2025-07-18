@@ -5,9 +5,7 @@ build/
 *.fuses
 *.log
 *.bak
-
-.git/
-
+__pycache__/ 
 *.bin
 *.hex
 *.elf
