@@ -1,0 +1,14 @@
+build/
+*.hex
+*.elf
+*.eep
+*.fuses
+*.log
+*.bak
+
+.git/
+
+*.bin
+*.hex
+*.elf
+*.pyc
