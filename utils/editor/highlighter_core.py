@@ -5,7 +5,7 @@ from utils.editor.highlighting.registry import get_rules_for_extension
 def get_file_extension(widget):
     if hasattr(widget, "current_file") and widget.current_file:
         return Path(widget.current_file).suffix.lower()
-    return ".ino"  # значение по умолчанию
+    return ".ino"  
 
 def setup_syntax_tags(widget):
     ext = get_file_extension(widget)
@@ -31,10 +31,10 @@ def schedule_syntax_highlight(widget, event=None):
 
 def highlight_syntax(widget):
     text = widget.get("1.0", "end-1c")
-    print(f"[DEBUG] highlight_syntax(): {len(text)} символов")
+    #print(f"[DEBUG] highlight_syntax(): {len(text)} символов")
 
     ext = get_file_extension(widget)
-    print(f"[DEBUG] Расширение файла: {ext}")
+    #print(f"[DEBUG] Расширение файла: {ext}")
 
     try:
         rules, styles = get_rules_for_extension(ext)

@@ -3,7 +3,6 @@ import serial.tools.list_ports
 from tkinter import font as tkfont
 from pathlib import Path
 
-
 class EditorSettingsWindow(ctk.CTkToplevel):
     def __init__(self, parent, mcu_var, com_var, boards,
                  font_family, font_size, uploader_type="uart", bootloader="auto"):
@@ -12,7 +11,6 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         self.geometry("420x480")
         self.resizable(False, False)
 
-        # Иконка
         icon_path = Path(__file__).parent.parent.parent / "data" / "Schemka-ico.ico"
         if icon_path.exists():
             self.iconbitmap(icon_path)
@@ -23,8 +21,8 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         self.mcu_var = mcu_var
         self.com_var = com_var
         self.boards = boards
-        self.font_family = font_family  # ctk.StringVar
-        self.font_size = font_size      # ctk.IntVar
+        self.font_family = font_family  
+        self.font_size = font_size      
         self.uploader_var = ctk.StringVar(value=uploader_type)
         self.bootloader_var = ctk.StringVar(value=bootloader)
 
@@ -48,8 +46,8 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         ctk.CTkButton(btn_frame, text="Отмена", command=self.destroy).pack(side="right", padx=5)
 
         ## Кнопка восстановления загрузчика (через ISP)
-        if self.uploader_var.get() == "isp":
-            ctk.CTkButton(btn_frame, text="🔁 Восстановить загрузчик", command=self._burn_bootloader).pack(side="left", padx=5)
+        #if self.uploader_var.get() == "isp":
+        #    ctk.CTkButton(btn_frame, text="🔁 Восстановить загрузчик", command=self._burn_bootloader).pack(side="left", padx=5)
 
 
         self._center_window()
@@ -114,6 +112,12 @@ class EditorSettingsWindow(ctk.CTkToplevel):
         ctk.CTkRadioButton(self.bootloader_frame, text="Новый", variable=self.bootloader_var, value="new").pack(anchor="w")
         ctk.CTkRadioButton(self.bootloader_frame, text="Старый", variable=self.bootloader_var, value="old").pack(anchor="w")
         ctk.CTkRadioButton(self.bootloader_frame, text="Авто", variable=self.bootloader_var, value="auto").pack(anchor="w")
+
+                ## Кнопка восстановления загрузчика (через ISP)
+        #if self.uploader_var.get() == "isp":
+        ctk.CTkButton(uploader_frame, text="🔁 Восстановить загрузчик", command=self._burn_bootloader).pack(side="left", padx=20, pady=5)
+
+
 
     def _setup_font_tab(self):
         tab = self.tabview.tab("Шрифт")

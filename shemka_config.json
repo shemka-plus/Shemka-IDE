@@ -1,11 +1,11 @@
 {
     "theme": "dark",
-    "color_theme": "dark-blue",
+    "color_theme": "green",
     "recent_files": [
-        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/sketch.c",
-        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/Echo.ino",
-        "C:/Stas/shemka-plus/collector/collector4.py",
         "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/Ghost.ino",
+        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/Echo.ino",
+        "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/sketch.c",
+        "C:/Stas/shemka-plus/collector/collector4.py",
         "C:/Stas/shemka-plus/Shemka-IDE/Shemka-IDE/build/sketch.cpp",
         "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.c",
         "C:/Stas/shemka-plus/Shemka-IDE/build/sketch.cpp",
@@ -17,9 +17,9 @@
     "baudrate": "9600",
     "mcu": "ATmega328P",
     "editor_theme": "dark",
-    "uploader_type": "uart",
+    "uploader_type": "isp",
     "bootloader": "new",
     "font_family": "Consolas",
     "font_size": 12,
-    "last_hex": "C:/Stas/shemka-plus/Shemka-IDE/v/v0.7/222.hex"
+    "last_hex": "C:/Stas/Проекты-160225/Питер/Cars/FW/v101/Cars/Cars.ino.with_bootloader.eightanaloginputs.hex"
 }

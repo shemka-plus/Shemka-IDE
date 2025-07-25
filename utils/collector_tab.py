@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox
 import os
 from core.version import APP_VERSION
 
-POPULAR_EXTENSIONS = [".py", ".cpp", ".h", ".c", ".txt"]
+POPULAR_EXTENSIONS = [".py", ".ino", ".cpp", ".h", ".c", ".txt"]
 
 class CollectorTab(ctk.CTkFrame):
     def __init__(self, parent, app_version="?", **kwargs):
@@ -38,7 +38,7 @@ class CollectorTab(ctk.CTkFrame):
         ctk.CTkLabel(ext_frame, text="Расширения (через запятую):").pack(pady=(5, 0))
         self.entry_ext = ctk.CTkEntry(ext_frame, placeholder_text=".py,.h")
         self.entry_ext.pack(fill="x", padx=10, pady=5)
-        self.entry_ext.insert(0, ",".join(POPULAR_EXTENSIONS[:2]))
+        self.entry_ext.insert(0, ",".join(POPULAR_EXTENSIONS[:1])) #2
         ctk.CTkOptionMenu(ext_frame, values=POPULAR_EXTENSIONS, command=self.add_extension).pack(pady=5)
         ctk.CTkButton(ext_frame, text="Объединить файлы", command=self.collect_files).pack(pady=10)
 
@@ -180,7 +180,7 @@ class CollectorTab(ctk.CTkFrame):
             return
         try:
             with open(out_file, encoding='utf-8') as f:
-                f.write(f"### STRUCTURE SCAN v0.4 ###\n### Directory: {src_dir} ###\n\n")
+                f.write(f"### STRUCTURE SCAN {self.version} ###\n### Directory: {src_dir} ###\n\n")
                 total = 0
                 for root, dirs, files in os.walk(src_dir):
                     level = root.replace(src_dir, '').count(os.sep)

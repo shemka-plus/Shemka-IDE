@@ -68,7 +68,7 @@ class InfoTab(ctk.CTkFrame):
         self.add_link(link_row, "🌐 GitFlic", "https://gitflic.ru/company/shemka-plus", side="left")
         self.add_link(link_row, "🌐 GitHub", "https://github.com/shemka-plus/Shemka-IDE", side="left")
         self.add_link(link_row, "📘 Документация", "https://b24-bcp47f.bitrix24site.ru/", side="left")
-        self.add_link(link_row, "✉️ Поддержка", "mailto:support@shemka.com", side="left")
+        self.add_link(link_row, "✉️ Поддержка", "mailto:shemka-plus@yandex", side="left")
 
     def add_link(self, parent, text, url, side="top"):
         def open_link():
@@ -80,7 +80,7 @@ class InfoTab(ctk.CTkFrame):
             fg_color="transparent",
             text_color="#3a5fcd",
             hover_color="#7799ff",
-            font=("", 12, "underline"),
+            font=("", 18, "underline"),
             anchor="w",
             command=open_link
         )
@@ -96,10 +96,10 @@ class InfoTab(ctk.CTkFrame):
             self.logo_label.configure(image=self.logo_image, text="")
         except Exception as e:
             print(f"[InfoTab] Ошибка загрузки логотипа {logo_file}: {e}")
-            self.logo_label.configure(text="Shemka+", image=None)
+            self.logo_label.configure(text="Schemka+", image=None)
 
     def show_about(self):
-        self.load_text(self.about_path, prepend=f"shemka-IDE v{self.version}\n\n", allow_images=False)
+        self.load_text(self.about_path, prepend=f"schemka-IDE v{self.version}\n\n", allow_images=False)
 
     def show_instructions(self):
         self.load_text(self.instr_path, allow_images=False)

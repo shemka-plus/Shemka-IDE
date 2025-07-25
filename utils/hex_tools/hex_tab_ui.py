@@ -138,13 +138,13 @@ class HexTabUI(ctk.CTkFrame):
         self.viewer.pack(side="left", fill="both", expand=True)
 
         # Оставим одну полосу прокрутки CTk
-        self.viewer_scroll = ctk.CTkScrollbar(
-            self.viewer_frame, 
-            orientation="vertical", 
-            command=self.viewer.yview
-        )
-        self.viewer_scroll.pack(side="right", fill="y")
-        self.viewer.configure(yscrollcommand=self.viewer_scroll.set)
+        #self.viewer_scroll = ctk.CTkScrollbar(
+        #    self.viewer_frame, 
+        #    orientation="vertical", 
+        #    command=self.viewer.yview
+        #)
+        #self.viewer_scroll.pack(side="right", fill="y")
+        #self.viewer.configure(yscrollcommand=self.viewer_scroll.set)
 
         # Консоль сделаем ниже viewer с фиксированной высотой
         self.console_frame = ctk.CTkFrame(viewer_console_frame)
@@ -237,8 +237,8 @@ class HexTabUI(ctk.CTkFrame):
 
 
     def create_eeprom_tab(self, tab):
-        ctk.CTkButton(tab, text="Чтение EEPROM", command=self.read_eeprom).grid(row=3, column=0, pady=10)
-        ctk.CTkButton(tab, text="Запись EEPROM", command=self.write_eeprom).grid(row=3, column=1, pady=10)
+        ctk.CTkButton(tab, text="Чтение EEPROM", command=self.read_eeprom).grid(row=3, column=0, padx=10, pady=(0, 20))
+        ctk.CTkButton(tab, text="Запись EEPROM", command=self.write_eeprom).grid(row=3, column=1, padx=10, pady=(0, 20))
 
     def create_fuses_tab(self, tab):
         self.fuse_l = StringVar()
@@ -492,8 +492,8 @@ class HexTabUI(ctk.CTkFrame):
         self.viewer.configure(
             fg_color=theme["editor_bg"],
             text_color=theme["editor_fg"],
-            scrollbar_button_color=theme["selection"],
-            scrollbar_button_hover_color=theme["cursor"]
+            #scrollbar_button_color=theme["selection"],
+            #scrollbar_button_hover_color=theme["cursor"]
         )
         
         # Применяем тему к консоли

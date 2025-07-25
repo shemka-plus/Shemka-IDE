@@ -1,5 +1,3 @@
-# utils/hex_tools/clone_tab.py
-
 from .base_tab import BaseTab
 
 class CloneTab(BaseTab):

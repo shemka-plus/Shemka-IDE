@@ -84,12 +84,12 @@ class EditorTab(ctk.CTkFrame):
         CTkTooltip(self.settings_button, "Настройки")
 
         # Кнопки компиляции и загрузки
-        compile_btn = ctk.CTkButton(top_frame, text="🧩 Компилировать", command=self.compile_code)
+        compile_btn = ctk.CTkButton(top_frame, text="🧩 Компилировать", command=self.compile_code, fg_color="#FF5555", hover_color="#CC0000")
         compile_btn.pack(side="right", padx=5)
         CTkTooltip(compile_btn, "Скомпилировать текущий файл")
 
         upload_label = "Прошить через UART" if self.config.get_uploader_type() == "uart" else "Прошить через ISP"
-        upload_btn = ctk.CTkButton(top_frame, text=upload_label, command=self.upload_code)
+        upload_btn = ctk.CTkButton(top_frame, text=upload_label, command=self.upload_code, fg_color="#FF5555", hover_color="#CC0000")
         upload_btn.pack(side="right", padx=5)
         CTkTooltip(upload_btn, "Загрузить прошивку в микроконтроллер")
 
@@ -262,7 +262,7 @@ class EditorTab(ctk.CTkFrame):
 
     def open_file(self):
         file_path = filedialog.askopenfilename(
-            filetypes=[("Файлы C++", "*.cpp"), ("Файлы Arduino", "*.ino"), ("Все файлы", "*.*")]
+            filetypes=[("Файлы Arduino", "*.ino"), ("Файлы библиотек", "*.h"), ("Все файлы", "*.*")]
         )
         if file_path:
             self.load_file(file_path)
@@ -283,7 +283,7 @@ class EditorTab(ctk.CTkFrame):
     def save_file_as(self):
         file_path = filedialog.asksaveasfilename(
             defaultextension=".cpp",
-            filetypes=[("Файлы C++", "*.cpp"), ("Файлы Arduino", "*.ino"), ("Все файлы", "*.*")]
+            filetypes=[("Файлы Arduino", "*.ino"), ("Файлы библиотек", "*.h"), ("Все файлы", "*.*")]
         )
         if file_path:
             self.current_file = file_path
@@ -299,7 +299,6 @@ class EditorTab(ctk.CTkFrame):
             self.config.add_recent_file(path)
             self.log(f"Открыт файл: {path}")
             
-            # Добавляем подсветку после загрузки файла
             self.editor.after(100, lambda: self.editor.highlight_syntax())
         except Exception as e:
             self.log(f"Ошибка открытия файла: {e}")

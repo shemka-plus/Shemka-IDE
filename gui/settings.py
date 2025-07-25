@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from .config_manager import ConfigManager
+#from .config_manager import ConfigManager
 from tkinter import messagebox
 from core.compiler_manager import CompilerManager
 

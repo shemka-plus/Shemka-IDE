@@ -27,7 +27,7 @@ class MainWindow(ctk.CTk):
             self.iconbitmap(default=str(icon_path))
 
         from core.version import APP_VERSION
-        self.title(f"shemka-IDE v{APP_VERSION}")
+        self.title(f"schemka-IDE v{APP_VERSION}")
         self.geometry("1200x800")
 
         # UI

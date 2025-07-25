@@ -1,4 +1,3 @@
-# utils/editor/linenumbers.py
 from tkinter import Text
 
 class LineNumbers(Text):

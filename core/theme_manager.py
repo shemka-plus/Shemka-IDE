@@ -1,4 +1,3 @@
-# core/theme_manager.py
 import customtkinter as ctk
 import json
 from pathlib import Path

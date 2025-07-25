@@ -35,7 +35,6 @@ class SyntaxText(BaseEditor):
 
     
     def _bind_shortcuts(self):
-        # Убираем дублирующие биндинги
         self.bind("<Control-c>", self._handle_copy)
         self.bind("<Control-v>", self._handle_paste)
         self.bind("<Control-x>", self._handle_cut)
@@ -45,7 +44,7 @@ class SyntaxText(BaseEditor):
 
     def _handle_copy(self, event=None):
         self.event_generate("<<Copy>>")
-        return "break"  # Предотвращаем дальнейшую обработку
+        return "break"  
 
     def _handle_paste(self, event=None):
         self.event_generate("<<Paste>>")

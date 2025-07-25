@@ -1,6 +1,4 @@
-# utils/hex_tools/base_tab.py
-
-import os
+#import os
 import subprocess
 from pathlib import Path
 from tkinter import messagebox
